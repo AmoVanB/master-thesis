@@ -1,4 +1,4 @@
 AuthName     "Service Discovery Configuration"
 AuthType     Basic
-AuthUserFile "/home/amo/Dropbox/ULg/2M/thesis/code/www/.htpasswd"
+AuthUserFile "/home/amo/Dropbox/ULg/2M/thesis/code/master-thesis/local/www/.htpasswd"
 Require      valid-user
