@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE config SYSTEM "config.dtd">
-<config>
+<config name="dell" alias=" @ Dell ">
   <log level="debug" />
   <database user="amo" password="cisco123"            
             name="service_discovery" host="localhost" 

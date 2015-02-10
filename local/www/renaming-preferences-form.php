@@ -4,6 +4,11 @@
   {
     $dom = new DomDocument();
     $dom->load('/etc/service-discovery/config.xml');
+
+    $config = $dom->documentElement;
+    $name  = $config->getAttribute('name');
+    $alias = $config->getAttribute('alias');
+
     $aliases = $dom->getElementsByTagName('interface');
     $numberOfAliases = $aliases->length;
 
@@ -105,9 +110,19 @@
   }
 </script>
 
-<p>Each service that is published on the public DNS will be appended a string containing information about the interface name and IP version on which it has been discovered by the router. If <code>name</code> is the service name, it will be published as <code>"name" + "if_alias" + "ip_alias"</code> where <code>if_alias</code> and <code>ip_alias</code> are the aliases of the interface name and IP version that can be configured throughout this page. If no alias is defined for an interface, <code>" @ " + "if_name"</code>, where <code>if_name</code> is the interface's classical name, will be used as alias.</p>
+<p>Each service that is published on the public DNS will be appended a string containing information about the router that has discovered it and the interface name and IP version on which it has been discovered. If <code>sname</code> is the service name, it will be published as <code>"sname" + "name" + "if_alias" + "ip_alias"</code> where <code>name</code>, <code>if_alias</code> and <code>ip_alias</code> are the aliases of the router name, interface name and IP version that can be configured throughout this page. If no alias is defined for an interface, <code>" @ " + "if_name"</code>, where <code>if_name</code> is the interface's classical name, will be used as alias. If no alias is defined for an IP version, <code>" (IPv" + if_ip + ")"</code>, where <code>if_ip</code> is the IP version, will be used as alias.</p>
 
 <form class="well table-responsive" action="index.php?page=renaming-preferences" method="POST">
+  <fieldset>
+  <legend>Router</legend>
+  
+    <label for="name">Name</label><br />
+    <input type="text" id="name" name="name" value="<?php echo $name; ?>" size="20" /><br />
+
+    <label for="alias">Alias</label><br />
+    <input type="text" id="alias" name="alias" value="<?php echo $alias; ?>" size="20" /><br />
+
+  </fieldset>
   <fieldset>
   <legend>IP Versions</legend>
 

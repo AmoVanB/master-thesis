@@ -1,7 +1,9 @@
 <?php
   /* Performing security checks. */
   $usedIDs = htmlspecialchars($_POST["usedIDs"]);
-
+  $name    = htmlspecialchars($_POST["name"]);
+  $alias   = htmlspecialchars($_POST["alias"]);
+ 
   if (isset($_POST['backup']))
     $backup = htmlspecialchars($_POST['backup']);
 
@@ -28,6 +30,9 @@
         echo '<p>Error while saving previous configuration file.</p>';
     }
 
+    $dom->documentElement->setAttribute('name', $name);
+    $dom->documentElement->setAttribute('alias', $alias);
+    
     // First we remove all the previous aliases.
     $ip_aliases = $dom->getElementsByTagName('ip');
     $if_aliases = $dom->getElementsByTagName('interface');

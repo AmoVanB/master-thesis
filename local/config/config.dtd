@@ -1,4 +1,6 @@
 <!ELEMENT config (log,database,domain,ip*,interface*,rules?)>
+  <!ATTLIST config name CDATA #REQUIRED>
+  <!ATTLIST config alias CDATA #REQUIRED>
 <!ELEMENT log EMPTY>
   <!ATTLIST log level CDATA #REQUIRED>
 <!ELEMENT database EMPTY>

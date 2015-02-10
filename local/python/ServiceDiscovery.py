@@ -93,6 +93,21 @@ class ServiceDiscovery:
     # will exist. Note that this is only valid if the config.dtd file is not 
     # corrupted, of course.
 
+    # Getting name and alias.
+    config = xml.getroot()
+
+    ## Name of the router added to the hostnames.
+    self.name  = config.get("name")
+
+    # We ensure the name is only composed of lower-case letters and numbers.
+    if (not re.match("^[a-z0-9]+$", self.name)):
+      raise ConfigError("Router name must contain only lower-case letters and "+
+                        "numbers.")    
+    
+    ## Alias of the router added to the services names.
+    self.alias = config.get("alias")
+
+
     # Getting database parameters.
     db = xml.find("./database")
 
@@ -380,8 +395,8 @@ class ServiceDiscovery:
                                   object_path = path_to_browser)
       ifc = dbus.Interface(proxy, avahi.DBUS_INTERFACE_SERVICE_BROWSER)
     except DBusException as e:
-      self.stop(error = "Error with the Avahi daemon. Is it still running? " +
-                         "Error : %s." % e)
+      self.logger.warning("Error when starting browsing type %s on %s: %s" % 
+                          (stype, self.interface_desc(interface, protocol), e))
       return
 
     ifc.connect_to_signal('ItemNew', self.newService)
@@ -416,7 +431,11 @@ class ServiceDiscovery:
                            "VALUES ('%s', '%i', '%s', '%s', " %
                                    (if_name, if_ip, name_, stype_) +
                            "NULL, NULL, NULL, FALSE, FALSE);"])
-    if (ans != 0):
+    if (ans == 1062):
+      # Duplicate entry. Should not occur, but it's not a problem.
+      self.logger.warning("Duplicate service %s.%s on %s. Ignored." %
+                          (name,stype,self.interface_desc(interface, protocol)))
+    elif (ans != 0):
       self.stop(error = "Database insertion failed (MySQL error: %i). " % ans)
       return
     
@@ -435,8 +454,9 @@ class ServiceDiscovery:
                                   object_path = path_to_resolver)
       ifc = dbus.Interface(proxy, avahi.DBUS_INTERFACE_SERVICE_RESOLVER)
     except DBusException as e:
-      self.stop(error = "Error with the Avahi daemon. Is it still running? " +
-                         "Error : %s." % e)
+      self.logger.warning("Error when starting resolving %s.%s on %s: %s" % 
+                          (name, stype,
+                           self.interface_desc(interface, protocol), e))
       return
 
     ifc.connect_to_signal('Found', self.serviceResolved)
@@ -661,8 +681,9 @@ class ServiceDiscovery:
       ifc4 = dbus.Interface(proxy4, avahi.DBUS_INTERFACE_RECORD_BROWSER)
       ifc6 = dbus.Interface(proxy6, avahi.DBUS_INTERFACE_RECORD_BROWSER)
     except DBusException as e:
-      self.stop(error = "Error with the Avahi daemon. Is it still running? " +
-                         "Error : %s." % e)
+      self.logger.warning("Error when starting browsing A/AAAA records for %s "+
+                          "on %s: %s" % 
+                          (host, self.interface_desc(interface, protocol), e))
       return
 
     ifc4.connect_to_signal('ItemNew', self.newRecord)
@@ -710,7 +731,12 @@ class ServiceDiscovery:
                            "WHERE hostname ='%s' " % name_   + 
                              "AND if_name  ='%s' " % if_name +
                              "AND if_ip    ='%i';" % if_ip])
-    if (ans != 0):
+    if (ans == 1062):
+      # Duplicate entry. Should not occur, but it's not a problem.
+      self.logger.warning("Duplicate address %s for %s on %s. Ignored." %
+                          (address_, name,
+                           self.interface_desc(interface, protocol)))
+    elif (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
 
@@ -973,9 +999,9 @@ class ServiceDiscovery:
     else:
       append_ip = " (IPv" + str(if_ip) + ")"
 
-    # We remove the 6 last characters of hostname (.local)
-    name_ = sname         + append_ifc + append_ip
-    host_ = hostname[:-6] + "-" + str(if_name) + "-v" + str(if_ip)
+    # Note that we remove the 6 last characters of hostname (.local)
+    name_ = sname         +     self.alias +     append_ifc   +      append_ip
+    host_ = hostname[:-6] +"-"+ self.name  +"-"+ str(if_name) +"-v"+ str(if_ip)
 
     return (name_, host_)
 

@@ -2,7 +2,7 @@
 
   /* If the form as been entirely submitted, we call the recipient script.
      Otherwise, we show the form. */
-  if (isset($_POST["ipv4"]) && isset($_POST["ipv6"]) && isset($_POST["usedIDs"]) && isset($_POST['save']) && ($_POST['save'] == "no" || isset($_POST['backup'])))
+  if (isset($_POST["name"]) && isset($_POST["alias"]) && isset($_POST["ipv4"]) && isset($_POST["ipv6"]) && isset($_POST["usedIDs"]) && isset($_POST['save']) && ($_POST['save'] == "no" || isset($_POST['backup'])))
   {
     $_POST["usedIDs"] = htmlspecialchars($_POST["usedIDs"]);
 
