@@ -116,7 +116,7 @@
               $perc_v4 = round($v4/$total*100, 2);
               $perc_v6 = round($v6/$total*100, 2);
             }    
-            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered addresses.</li>';
+            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered global addresses.</li>';
             echo '</ul>';
           ?>
 
@@ -212,8 +212,8 @@
               echo '<li><strong>'.$row["hostname"].'</strong> ('.$row["if_name"].' - IPv'.$row["if_ip"].')';
 
               echo '<ul>';
-              echo '<li>'.$v4.' IPv4 addresses,</li>';
-              echo '<li>'.$v6.' IPv6 addresses,</li>';
+              echo '<li>'.$v4.' global IPv4 addresses,</li>';
+              echo '<li>'.$v6.' global IPv6 addresses,</li>';
               echo '<li>'.$row["nb"].' discovered services,</li>';
               echo '<li>'.$services_announced.' announced services.</li>';
               echo '</ul>';
@@ -253,9 +253,9 @@
   <strong class="text-default">Uncoloured</strong> services are resolved but not announced,<br />
   <strong class="text-success">green</strong> services are announced,<br />
   <strong class="text-danger">red</strong> services are unresolved and<br />
-<strong class="text-warning">orange</strong> services are resolved except their IP address.
+<strong class="text-warning">orange</strong> services are resolved except their IP address.<br />
 </p>
-
+<p>Note that only global addresses are considered. A service with no global address will never be able to get fully resolved.</p>
 
 <!-- Displaying sorting value and order. -->
 <p>

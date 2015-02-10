@@ -696,9 +696,10 @@ class ServiceDiscovery:
 
 
   def newRecord(self, interface, protocol, name, clazz, type, rdata, flags):
-    """Inserts the new address in the database and sets all services of the
-    hostname as resolved. If a service has to be announced, it is (along with
-    the new address)."""
+    """If obtained address is global, inserts it in the database and sets all
+    services of the hostname as resolved. If a service has to be announced,
+    it is (along with the new address).
+    """
 
     if (type == 1):
       serv_ip = 4
@@ -710,10 +711,15 @@ class ServiceDiscovery:
     # Convert the byte represented address into a string.
     address = self.get_address_from_bytes(rdata, serv_ip)
 
+    # Do nothing if the address is not global as it will be useless from outside
+    # the subnet.
+    if (netaddr.IPAddress(address).is_private()):
+      return
+
     self.logger.debug("New IPv%i address (%s) for %s on %s.",
                       serv_ip, address, name,
                       self.interface_desc(interface, protocol))
- 
+
     # Insertion in database.
     # Escaping and verifying values that will be part of the SQL query.
     name_    = Miscellaneous.escape(name)
@@ -804,9 +810,9 @@ class ServiceDiscovery:
 
 
   def removeRecord(self, interface, protocol, name, clazz, type, rdata, flags):
-    """Removes the address from the database and from the DNS if necessary. It  
-    removes also the associated services from the DNS if this was the last 
-    address of the hostname.
+    """If address is global, removes it from the database and from the DNS
+    if necessary. It removes also the associated services from the DNS if this
+    was the last address of the hostname.
     """
 
     if (type == 1):
@@ -818,6 +824,11 @@ class ServiceDiscovery:
 
     # Convert the byte represented address into a string.
     address = self.get_address_from_bytes(rdata, serv_ip)
+
+    # Do nothing if the address is not global as it will be useless from outside
+    # the subnet.
+    if (netaddr.IPAddress(address).is_private()):
+      return
 
     self.logger.debug("Remove IPv%i address (%s) of %s on %s.",
                       serv_ip, address, name,
