@@ -70,6 +70,68 @@
       <div class="row">
         <div class="col-md-offset-1 col-md-10 stats-box">
 
+          <h4>General stats</h4>
+          <?php
+            $tot = $db->query('SELECT COUNT(*) FROM services');
+            $nb_services = $tot->fetchColumn();
+            $resolved = $db->query('SELECT COUNT(*) FROM services WHERE resolved = 1');
+            $nb_resolved = $resolved->fetchColumn();
+            $announced = $db->query('SELECT COUNT(*) FROM services WHERE announced = 1');
+            $nb_announced = $announced->fetchColumn();
+
+            echo '<ul>';
+            echo '<li>'.$nb_services.' discovered services';
+            if ($nb_services == 0)
+              echo '.</li>'; 
+            else
+            { 
+              echo ' among which';
+              echo '<ul>';
+              echo '<li>'.$nb_resolved.' ('.round($nb_resolved/$nb_services*100, 2).'%) have been resolved,'
+                 , '</li>';
+              echo '<li>'.$nb_announced.' ('.round($nb_announced/$nb_services*100, 2).'%) have been announced.'
+                 , '</li>';
+              echo '</ul>';
+              
+              echo '</li>';
+            }
+
+            if ($nb_services != 0 && $nb_resolved != 0)
+              echo '<li>'.round($nb_announced/$nb_resolved*100, 2).'% of the resolved services have been announced.</li>';
+
+            $sql_v4  = 'SELECT COUNT(*) FROM addresses WHERE ip = 4';
+            $v4 = $db->query($sql_v4)->fetchColumn();
+            $sql_v6  = 'SELECT COUNT(*) FROM addresses WHERE ip = 6';
+            $v6 = $db->query($sql_v6)->fetchColumn();
+
+            $total = $v4 + $v6;
+
+            if ($total == 0)
+            {
+              $perc_v4 = 0;
+              $perc_v6 = 0;
+            }
+            else
+            {
+              $perc_v4 = round($v4/$total*100, 2);
+              $perc_v6 = round($v6/$total*100, 2);
+            }    
+            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered addresses.</li>';
+            echo '</ul>';
+          ?>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    
+    <div class="col-md-6">
+      <div class="row">
+        <div class="col-md-offset-1 col-md-10 stats-box">
+
           <h4>Services types stats</h4>
           <?php
             echo '<ul>'; 
@@ -125,67 +187,6 @@
       </div>
     </div>
 
-  </div>
-
-  <div class="row">
-    
-    <div class="col-md-6">
-      <div class="row">
-        <div class="col-md-offset-1 col-md-10 stats-box">
-
-          <h4>General stats</h4>
-          <?php
-            $tot = $db->query('SELECT COUNT(*) FROM services');
-            $nb_services = $tot->fetchColumn();
-            $resolved = $db->query('SELECT COUNT(*) FROM services WHERE resolved = 1');
-            $nb_resolved = $resolved->fetchColumn();
-            $announced = $db->query('SELECT COUNT(*) FROM services WHERE announced = 1');
-            $nb_announced = $announced->fetchColumn();
-
-            echo '<ul>';
-            echo '<li>'.$nb_services.' discovered services';
-            if ($nb_services == 0)
-              echo '.</li>'; 
-            else
-            { 
-              echo ' among which';
-              echo '<ul>';
-              echo '<li>'.$nb_resolved.' ('.round($nb_resolved/$nb_services*100, 2).'%) have been resolved,'
-                 , '</li>';
-              echo '<li>'.$nb_announced.' ('.round($nb_announced/$nb_services*100, 2).'%) have been announced.'
-                 , '</li>';
-              echo '</ul>';
-              
-              echo '</li>';
-            }
-
-            if ($nb_services != 0 && $nb_resolved != 0)
-              echo '<li>'.round($nb_announced/$nb_resolved*100, 2).'% of the resolved services have been announced.</li>';
-
-            $sql_v4  = 'SELECT COUNT(*) FROM addresses WHERE ip = 4';
-            $v4 = $db->query($sql_v4)->fetchColumn();
-            $sql_v6  = 'SELECT COUNT(*) FROM addresses WHERE ip = 6';
-            $v6 = $db->query($sql_v6)->fetchColumn();
-
-            $total = $v4 + $v6;
-
-            if ($total == 0)
-            {
-              $perc_v4 = 0;
-              $perc_v6 = 0;
-            }
-            else
-            {
-              $perc_v4 = round($v4/$total*100, 2);
-              $perc_v6 = round($v6/$total*100, 2);
-            }    
-            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered addresses.</li>';
-            echo '</ul>';
-          ?>
-        </div>
-      </div>
-    </div>
-
     <div class="col-md-6">
       <div class="row">
         <div class="col-md-offset-1 col-md-10 stats-box">
@@ -197,6 +198,9 @@
 
             foreach ($db->query($sql) as $row)
             {
+              if ($row["hostname"] == Null)
+                continue;
+
               $sql_v4  = 'SELECT COUNT(*) FROM addresses WHERE if_ip = '.$row["if_ip"].' AND if_name = "'.$row["if_name"].'" AND hostname = "'.$row["hostname"].'" AND ip = 4';
               $v4 = $db->query($sql_v4)->fetchColumn();
               $sql_v6  = 'SELECT COUNT(*) FROM addresses WHERE if_ip = '.$row["if_ip"].' AND if_name = "'.$row["if_name"].'" AND hostname = "'.$row["hostname"].'" AND ip = 6';
@@ -216,6 +220,7 @@
             }
             echo '</ul>';
           ?>
+
         </div>
       </div>
     </div>
