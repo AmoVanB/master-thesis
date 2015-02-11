@@ -555,7 +555,7 @@ class ServiceDiscovery:
       
       self.logger.info("%s.%s removed from the DNS.", name_, stype)
 
-    if (nb_host == 0):
+    if (nb_host == 0 and hostname != None):
       # Stop browsing A/AAAA record for this hostname since he hosts no more 
       # services.
       self.record_browsers[(interface, protocol, unicode(hostname))][0].Free()
@@ -584,6 +584,8 @@ class ServiceDiscovery:
     self.logger.debug("= Resolved %s.%s to %s on %s.", name, stype, host,
                       self.interface_desc(interface, protocol))
 
+    hostname = host
+
     # Insertion in database.
     # Escaping and verifying values that will be part of the SQL query.
     host_    = Miscellaneous.escape(host)
@@ -598,7 +600,7 @@ class ServiceDiscovery:
 
     # If we are already browsing for the hostname, maybe we already have an
     # address. We therefore look in the database.
-    if self.record_browsers.has_key((interface, protocol, host)):
+    if self.record_browsers.has_key((interface, protocol, unicode(hostname))):
       ans = self.db.query("SELECT COUNT(*) FROM addresses WHERE hostname='%s';"%
                           host) 
       if (ans == None or len(ans) == 0):
@@ -656,7 +658,7 @@ class ServiceDiscovery:
     # If the host is not on the local LAN or if we already browse for it, we 
     # are done (no need to browse).
     if (not host.endswith(".local") or
-        self.record_browsers.has_key((interface, protocol, host))):
+        self.record_browsers.has_key((interface, protocol, unicode(hostname)))):
       return
 
     # Browse A/AAAA record.
@@ -692,7 +694,7 @@ class ServiceDiscovery:
     ifc6.connect_to_signal('ItemRemove', self.removeRecord)
 
     # Mentioning we are browsing the records for this host.
-    self.record_browsers[(interface, protocol, host)] = (ifc4, ifc6)
+    self.record_browsers[(interface, protocol, unicode(hostname))] = (ifc4,ifc6)
 
 
   def newRecord(self, interface, protocol, name, clazz, type, rdata, flags):
