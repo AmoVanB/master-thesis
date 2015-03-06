@@ -281,7 +281,6 @@ class DNSWrapper:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
-
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
     if (server_addresses[0] == None and server_addresses[1] == None):
@@ -295,7 +294,7 @@ class DNSWrapper:
     # Transforming TXT array in string ("key=val key2=val2")
     txt_string = ''
     for elem in txt:
-      txt_string = txt_string + elem + ' '
+      txt_string = txt_string + Miscellaneous.escape(elem) + ' '
     if (len(txt_string) == 0):
       txt_string = '""'
     else:
@@ -316,7 +315,7 @@ class DNSWrapper:
 
     except (dns.name.LabelTooLong,dns.name.NameTooLong,dns.name.EmptyLabel) as e:
       return LABEL_NAME_ERROR
-    
+      
     response = None
 
     try:

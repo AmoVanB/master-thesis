@@ -592,7 +592,7 @@ class ServiceDiscovery:
     name_    = Miscellaneous.escape(name)
     stype_   = Miscellaneous.escape(stype)
     port     = int(port)
-    txt_     = self.txt_to_byte_array_as_hex_string(txt)
+    txt_     = self.txt_to_byte_array_as_string(txt)
     if_name  = self.interface_name(interface)
     if_ip    = self.ip_version(protocol)
     resolved = 0 # Service considered resolved when we have an address for it.
@@ -601,8 +601,9 @@ class ServiceDiscovery:
     # If we are already browsing for the hostname, maybe we already have an
     # address. We therefore look in the database.
     if self.record_browsers.has_key((interface, protocol, unicode(hostname))):
-      ans = self.db.query("SELECT COUNT(*) FROM addresses WHERE hostname='%s';"%
-                          host) 
+      ans = self.db.query("SELECT COUNT(*) FROM addresses WHERE hostname = " +
+                          "'%s'" % host_ + " AND if_name = '%s'"  % if_name + 
+                                           " AND if_ip =   '%i';" % if_ip) 
       if (ans == None or len(ans) == 0):
         self.stop(error = "Database failed.")
         return
@@ -644,7 +645,7 @@ class ServiceDiscovery:
     ans = self.db.command(["UPDATE services SET "          +
                            "hostname = '%s', " % host_     +
                            "port     = '%i', " % port      +
-                           "TXT      =x'%s', " % txt_      +
+                           "TXT      = '%s', " % Miscellaneous.escape(txt_) +
                            "announced= '%i', " % announced +
                            "resolved = '%i'  " % resolved  +
                            "WHERE name   ='%s' " % name_   + 
@@ -774,7 +775,7 @@ class ServiceDiscovery:
         stype     = service['type'].decode('utf-8').encode('utf-8')
         addresses = [(serv_ip, address.decode('utf-8').encode('utf-8'))]
         port      = int(service['port'])
-        txt       = self.bytes_to_string_array(service['TXT'])
+        txt       = self.txt_to_string_array(service['TXT'])
         ttl       = self.ttl
         dns_ans = self.dns.addService(name,
                                       stype,
@@ -786,16 +787,17 @@ class ServiceDiscovery:
         if (dns_ans == DNSWrapper.LABEL_NAME_ERROR):
           # The new name is not anymore valid (length problem). We notify
           # the user but we do not abort.
-          self.logger.error("Service " + name + "." + stype + " of " + host +
-                            " presents a length problem. Service not"       +
-                            " announced.")
+          # Note: decode to send the unicode string.
+          self.logger.error("Service " + name.decode('utf-8') + "." + stype +
+                            " of " + host + " presents a length problem. "  +
+                            " Service not announced.")
           announced = 0
         elif (dns_ans != 0):
           self.stop(error = "DNS Update failed. %s" % self.dns.errors[dns_ans])
           return
         else:
           self.logger.info("%s.%s (%s) announced on DNS with address %s.",
-                           name, stype, host, address)
+                           name.decode('utf-8'), stype, host, address)
           announced = 1
 
         # Set the service announced. No need to escape since values come from
@@ -852,24 +854,33 @@ class ServiceDiscovery:
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
 
-    # Removing address from the DNS. Won't lead to any problem if it was not
-    # announced.
-    (s, host) = self.formatForDNS("", name, if_name, if_ip)
+    # Removing address from the DNS if announced.
+    ans = self.db.query("SELECT announced FROM services WHERE " +
+                        "hostname    ='%s' " % name_    + 
+                        "AND if_name ='%s' " % if_name  +
+                        "AND if_ip   ='%i';" % if_ip)
+    if (ans == None):
+      self.stop(error = "Database failed.")
+      return
 
-    if (serv_ip == 4):
-      ans = self.dns.removeRecord(host, 'A', address)
-      if (ans != 0):
-        self.stop(error = "DNS Update failed. %s" % self.dns.errors[ans])
-        return
-    elif (serv_ip == 6):
-      ans = self.dns.removeRecord(host, 'AAAA', address)
-      if (ans != 0):
-        self.stop(error = "DNS Update failed. %s" % self.dns.errors[ans])
-        return
+    # If len(ans) == 0: The address removal has been handled by removeService.
+    if len(ans) > 0 and ans[0]['announced']:
+      (s, host) = self.formatForDNS("", name, if_name, if_ip)
 
-    self.logger.info("IPv%i address (%s) of %s on %s removed from DNS.",
-                      serv_ip, address, name,
-                      self.interface_desc(interface, protocol))
+      if (serv_ip == 4):
+        ans = self.dns.removeRecord(host, 'A', address)
+        if (ans != 0):
+          self.stop(error = "DNS Update failed. %s" % self.dns.errors[ans])
+          return
+      elif (serv_ip == 6):
+        ans = self.dns.removeRecord(host, 'AAAA', address)
+        if (ans != 0):
+          self.stop(error = "DNS Update failed. %s" % self.dns.errors[ans])
+          return
+
+      self.logger.info("IPv%i address (%s) of %s on %s removed from DNS.",
+                        serv_ip, address, name,
+                        self.interface_desc(interface, protocol))
 
     # Getting the number of remaining address for the hostname.
     nb_addr_host_ans = self.db.query("SELECT COUNT(*) FROM addresses " +
@@ -1083,34 +1094,31 @@ class ServiceDiscovery:
               str(self.ip_version(protocol)))
 
 
-  def txt_to_byte_array_as_hex_string(self, txt):
+  def txt_to_byte_array_as_string(self, txt):
     """From a avahi TXT value, returns its representation as described in
-    section 6.6 of RFC6763. The byte array is returned as a string giving its
-    hexadecimal representation.
+    section 6.6 of RFC6763. The byte array is returned as a string.
 
     Args:
       txt: Avahi TXT value.
 
     Returns:
-      string holding the hexademical representation of the TXT as described in
-      RFC6763.
+      string holding the representation of the TXT as described in RFC6763.
     """
 
     result = ''
     strings = avahi.txt_array_to_string_array(txt)
     for elem in strings:
-      encoded_txt_field = bytearray(elem, 'UTF-8')
-      result = result + Miscellaneous.int_to_hex_string(len(encoded_txt_field))
-      result = result + Miscellaneous.bytes_to_hex_string(encoded_txt_field)
+      result = result + chr(len(elem))
+      result = result + elem
     return result
 
 
-  def bytes_to_string_array(self, val):
+  def txt_to_string_array(self, val):
     """From a raw TXT value (as described in section 6.6 of RFC6763), returns
     an array of key/value pairs.
 
     Args:
-      val: the raw bytearray.
+      val: the raw TXT.
 
     Returns:
       array of key/value pairs.
@@ -1120,13 +1128,15 @@ class ServiceDiscovery:
     
     i = 0
     while i < len(val):
-      l = val[i]
-      string = val[i+1:i+1+l]    
-      array.append(string.decode("utf-8").encode('utf-8'))
-      i = i+2+l*2
+      if isinstance(val[i], int):
+        l = val[i]
+      else:
+        l = ord(val[i])
+
+      array.append(str(val[i+1:i+1+l]))    
+      i = i+1+l
     
     return array
-
 
   def get_address_from_bytes(self, bytes, ip_version):
     """From a bytearray, returns the usual IP address format of an

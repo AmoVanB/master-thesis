@@ -15,26 +15,6 @@ Contact entreprise: Eric Vyncke
 Advisor: Guy Leduc
 """
 
-def int_to_hex_string(integer):
-  """From an integer, returns its hexademical representation, as a string.
-    '0x' is not prepended.
-    '0' is prepended if the integer can be represented by one single hex digit.
-    That is, the returned string is always of length >= 2.
-  
-  Args:
-    integer:  The integer to be converted.
-  
-  Returns:
-    The hexadecimal representation of the integer.   
-  """
-
-  string = hex(integer)
-  string = string[2:]
-  if (len(string) < 2):
-    string = '0' + string
-  return string
-
-
 def bytes_to_hex_string(bytes):
   """From a bytearray, returns its hexadecimal representation.
 
