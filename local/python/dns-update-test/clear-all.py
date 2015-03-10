@@ -95,13 +95,15 @@ def clearall(server, key_name, key_value, zone, algorithm):
   # 7. We can now delete all [5] or [6].
 
   # 1. Getting all types that have been announced.
+
+
   try:
     types_answer = dns.resolver.query('_services._dns-sd._udp.%s' % zone, 'PTR')
   except dns.resolver.NoAnswer as e:
     return
 
   # 2. Deleting [1]
-  update.delete('_services._dns-sd._udp', 'PTR')
+  update.delete('_services._dns-sd._udp.%s' % zone, 'PTR')
 
   # 3. For each type, getting the different instances.
   for service_type in types_answer:

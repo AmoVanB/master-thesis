@@ -1,12 +1,12 @@
-groupadd -r sd
-adduser -r -g sd sd-daemon
-adduser -r -g sd sd-gui
+groupadd -r    sd
+adduser  -r -g sd sd-daemon
+adduser  -r -g sd sd-gui
 
 mkdir /etc/service-discovery/
 
-cp  config/config.dtd           /etc/service-discovery/
-cp  config/config.xml           /etc/service-discovery/
-cat config/avahi-daemon.conf >  /etc/avahi/avahi-daemon.conf
+cp  ./config/config.dtd           /etc/service-discovery/
+cp  ./config/config.xml           /etc/service-discovery/
+cat ./config/avahi-daemon.conf >  /etc/avahi/avahi-daemon.conf
 touch /var/log/service-discovery.log
 
 chown sd-gui    /etc/service-discovery/
@@ -19,9 +19,12 @@ chgrp sd        /etc/service-discovery/config.dtd
 chgrp sd        /etc/service-discovery/config.xml
 chgrp sd        /var/log/service-discovery.log
 
-chmod 640 /etc/service-discovery/config.xml # Group can read, user write and others: nothing because holds passwords
-chmod 444 /etc/service-discovery/config.dtd # one may only read the DTD
-chmod 664 /var/log/service-discovery.log # Everybody may read the log but only u/g write
+# Group can read, user write and others: nothing because holds passwords.
+chmod 640 /etc/service-discovery/config.xml
+# DTD can't be edited by anybody.
+chmod 444 /etc/service-discovery/config.dtd
+# Everybody may read the logs but only user/group may write.
+chmod 664 /var/log/service-discovery.log
 
 /opt/lampp/lampp start
 
@@ -30,6 +33,6 @@ echo "Creating MySQL user amo using root."
 echo "Creating tables using amo."
 /opt/lampp/bin/mysql -u amo -p < sql/user_init.sql
 
-# Restart avahi to reload configuration.
+# Restart Avahi to reload configuration.
 avahi-daemon --kill
 avahi-daemon -D
