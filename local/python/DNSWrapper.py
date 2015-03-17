@@ -32,7 +32,7 @@ class DNSWrapper:
      DNS updates on a particular zone.
   """
 
-  def __init__(self, server, key_name, key_value, zone, algorithm):
+  def __init__(self, server, key_name, key_value, zone, algorithm, ttl, domain):
     """Constructor.
 
       Args:
@@ -43,6 +43,9 @@ class DNSWrapper:
         algorithm: Name of the signature algorithm to use.
                    HMAC-MD5.SIG-ALG.REG.INT., hmac-sha1, hmac-sha224,
                    hmac-sha256, hmac-sha384, hmac-sha512 are supported.
+        ttl:       TTL to set to the records added.
+        domain:    The name of the label to add to zone to identify the domain
+                   in which to publish. 
     """
     ## Server name.
     self.server = server
@@ -53,7 +56,11 @@ class DNSWrapper:
     ## Zone to update.
     self.zone = zone
     ## TSIG algorithm used to sign.
-    self. algorithm = algorithm
+    self.algorithm = algorithm
+    ## TTL.
+    self.ttl = ttl
+    ## Subdomain in which to publish
+    self.domain = domain
 
     ## DNS Update (RFC2136) error codes based on their number.
     self.DNSUpdateErrorCodes = {1: 'FORMERR',
@@ -104,6 +111,10 @@ class DNSWrapper:
     self.errors[SOCKET_ERROR]      = 'Socket error.'
 
 
+    # We add the b._dns-sd record in the zone in order to advertise the new
+    # subdomain to users browsing the zone.
+    self.addRecord("b._dns-sd._udp", "PTR", domain, subdomain = False) 
+
   def resolve(self, name):
     """Resolves a DNS name to its IP addresses.
 
@@ -145,19 +156,26 @@ class DNSWrapper:
     return addresses
 
 
-  def removeRecord(self, name, rtype, rdata = None):
+  def removeRecord(self, name, rtype, rdata = None, subdomain = True):
     """Removes a record from the DNS zone.
 
     Args:
-      name:  Name of the record to remove.
-      rtype: Type of the record to remove.
-      rdata: Rdata of the record to remove. If None, the removal is done
-             independently of the rdata value.
+      name:      Name of the record to remove.
+      rtype:     Type of the record to remove.
+      rdata:     Rdata of the record to remove. If None, the removal is done
+                 independently of the rdata value.
+      subdomain: Wether or not to remove from the subdomain or from the zone 
+                 itself. Note that this does not affect the rdata.
 
     Returns:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
+
+    if subdomain:
+      domain = "." + self.domain
+    else:
+      domain = ""
 
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
@@ -170,9 +188,9 @@ class DNSWrapper:
                                keyalgorithm = self.algorithm)
 
     if (rdata == None):
-      update.delete(name, rtype)
+      update.delete(name + domain, rtype)
     else:
-      update.delete(name, rtype, rdata)
+      update.delete(name + domain, rtype, rdata)
 
     response = None
 
@@ -205,19 +223,25 @@ class DNSWrapper:
     return response.rcode()
 
 
-  def addRecord(self, name, ttl, rtype, rdata):
+  def addRecord(self, name, rtype, rdata, subdomain = True):
     """Adds a record to the DNS zone.
 
     Args:
-      name:  Name of the record to add.
-      ttl:   TTL of the record to add.
-      rtype: Type of the record to add.
-      rdata: Rdata of the record to add.
+      name:      Name of the record to add.
+      rtype:     Type of the record to add.
+      rdata:     Rdata of the record to add.
+      subdomain: Wether or not to publish in the subdomain or in the zone 
+                 itself. Note that this does not affect the rdata.
 
     Returns:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
+
+    if subdomain:
+      domain = "." + self.domain
+    else:
+      domain = ""
 
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
@@ -229,7 +253,7 @@ class DNSWrapper:
                                keyring      = key,
                                keyalgorithm = self.algorithm)
 
-    update.add(name, ttl, rtype, rdata)
+    update.add(name + domain, self.ttl, rtype, rdata)
 
     response = None
 
@@ -262,7 +286,7 @@ class DNSWrapper:
     return response.rcode()
 
 
-  def addService(self, name, stype, host, addresses, port, txt, ttl):
+  def addService(self, name, stype, host, addresses, port, txt, subdomain = True):
     """Announces a given service on the public DNS zone.
 
     Args:
@@ -275,12 +299,19 @@ class DNSWrapper:
       port:      Port of the service on the host.
       txt:       Array of strings each of them containing a single
                  key=value pair.
-      ttl:       TTL value to set to the added records.
+      subdomain: Wether or not to publish in the subdomain or in the zone 
+                 itself. 
 
     Returns:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
+
+    if subdomain:
+      domain = "." + self.domain
+    else:
+      domain = ""
+
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
     if (server_addresses[0] == None and server_addresses[1] == None):
@@ -303,15 +334,20 @@ class DNSWrapper:
 
     try:
       name_type = Miscellaneous.escape("%s.%s" % (name, stype))
-      update.add('_services._dns-sd._udp', ttl, 'PTR', stype)
-      update.add(stype,                    ttl, 'PTR', name_type)
-      update.add(name_type,                ttl, 'SRV', '0 0 %i %s'%(port, host))
-      update.add(name_type,                ttl, 'TXT', txt_string)
+      update.add('_services._dns-sd._udp' + domain, self.ttl,
+                 'PTR', stype + domain)
+      update.add(stype                    + domain, self.ttl,
+                 'PTR', name_type + domain)
+      update.add(name_type                + domain, self.ttl,
+                 'SRV','0 0 %i %s' % (port, host + domain))
+      update.add(name_type                + domain, self.ttl,
+                 'TXT', txt_string)
+
       for t in addresses:
         if (t[0] == 6):
-          update.add(host, ttl, 'AAAA', t[1])
+          update.add(host + domain, self.ttl, 'AAAA', t[1])
         elif (t[0] == 4):
-          update.add(host, ttl, 'A'   , t[1])
+          update.add(host + domain, self.ttl, 'A'   , t[1])
 
     except (dns.name.LabelTooLong,dns.name.NameTooLong,dns.name.EmptyLabel) as e:
       return LABEL_NAME_ERROR
@@ -347,7 +383,7 @@ class DNSWrapper:
     return response.rcode()
 
 
-  def removeService(self, name, stype, host, delete_stype, delete_host):
+  def removeService(self, name, stype, host, delete_stype, delete_host, subdomain = True):
     """Removes a given service from the public DNS zone.
 
     Args:
@@ -358,10 +394,18 @@ class DNSWrapper:
                     record announcing the service type 'stype'.
       delete_host:  Boolean telling whether or not to delete the addresses of 
                     'host'.
+      subdomain:    Wether or not to remove from subdomain or from the zone 
+                    itself. 
+
     Returns:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
+
+    if subdomain:
+      domain = "." + self.domain
+    else:
+      domain = ""
 
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
@@ -374,16 +418,16 @@ class DNSWrapper:
                                keyalgorithm = self.algorithm)
 
     name_type = Miscellaneous.escape("%s.%s" % (name, stype))
-    update.delete(stype,     'PTR', name_type)
-    update.delete(name_type, 'SRV')
-    update.delete(name_type, 'TXT')
+    update.delete(stype     + domain,     'PTR', name_type + domain)
+    update.delete(name_type + domain, 'SRV')
+    update.delete(name_type + domain, 'TXT')
 
     if (delete_host):
-      update.delete(host, 'AAAA')
-      update.delete(host, 'A')
+      update.delete(host + domain, 'AAAA')
+      update.delete(host + domain, 'A')
 
     if (delete_stype):
-      update.delete('_services._dns-sd._udp', 'PTR', stype)
+      update.delete('_services._dns-sd._udp' + domain, 'PTR', stype + domain)
 
     response = None
 
@@ -416,14 +460,23 @@ class DNSWrapper:
     return response.rcode()
 
 
-  def clearDNSServices(self):
+  def clearDNSServices(self, subdomain = True):
     """Clears all services announced on the zone, given that the services
       have been announced correctly.
+
+    Args:
+      subdomain:    Wether or not to remove from subdomain or from the zone 
+                    itself. 
 
     Returns:
       Integer code whose signification can be retrieved in DNSWrapper.errors.
       0 is successful, another value represents a particular error.
     """
+
+    if subdomain:
+      domain = "." + self.domain
+    else:
+      domain = ""
 
     # Getting name server's IP address.
     server_addresses = self.resolve(self.server)
@@ -457,57 +510,61 @@ class DNSWrapper:
     # 5. From all [3], we retrieve the different hostnames ([5] or [6]).
     # 6. We can now delete all [3] and [4].
     # 7. We can now delete all [5] or [6].
-    # 8. Clear the 'b._dns-sd._udp' and 'db._dns-sd._udp' records.
+    # 8. Clear the 'b._dns-sd._udp' record.
 
     # 1. Getting all types that have been announced.
     try:
-      types_answer = dns.resolver.query('_services._dns-sd._udp.%s' % self.zone,
-                                        'PTR')
+      types_answer = dns.resolver.query('_services._dns-sd._udp' + domain +
+                                        '.%s' % self.zone, 'PTR')
     except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
       return 0 # No services announced: no clearing.
     except dns.exception.DNSException as e:
       return NS_QUERYING_ERROR
 
     # 2. Deleting [1]
-    update.delete('_services._dns-sd._udp', 'PTR')
+    update.delete('_services._dns-sd._udp' + domain, 'PTR')
 
     # 3. For each type, getting the different instances.
     for service_type in types_answer:
       s = str(service_type.target) 
-      stype = s.split('.%s' % self.zone, 1)[0] # getting '_http._tcp'
+      labels = s.split('.')
+      stype = labels[0] + "." + labels[1]  # getting '_http._tcp'
 
       try:
-        instances_answer = dns.resolver.query('%s.%s'%(stype,self.zone), 'PTR')
+        instances_answer = dns.resolver.query('%s.%s' % 
+                                             (stype + domain, self.zone), 'PTR')
       except dns.exception.DNSException as e:
         continue
 
       # 4. Deleting [2]
-      update.delete(stype, 'PTR') 
+      update.delete(stype + domain, 'PTR') 
 
       # 5. For each instance, getting the hostnames.
       for instance in instances_answer:
         s = str(instance.target)
-        name = s.split('.%s' % self.zone, 1)[0] # getting 'name._http._tcp'
+        labels = s.split('.')
+        name = labels[0] + "." + labels[1] + "." + labels[2] # getting 'name._http._tcp'
         
         try:
-          host_answer = dns.resolver.query('%s.%s'%(name, self.zone), 'SRV')
+          host_answer = dns.resolver.query('%s.%s' % 
+                                           (name + domain, self.zone), 'SRV')
         except dns.exception.DNSException as e:
           continue
 
         # 6. Deleting [3] and [4]
-        update.delete(name, 'SRV')
-        update.delete(name, 'TXT')
+        update.delete(name + domain, 'SRV')
+        update.delete(name + domain, 'TXT')
 
         # 7. Deleting A and AAAA of each host.
         for host in host_answer:
           s = str(host.target)
-          hostname = s.split('.%s' % self.zone, 1)[0] # getting 'hostname'
-          update.delete(hostname, 'AAAA')
-          update.delete(hostname, 'A')
+          labels = s.split('.')
+          hostname = labels[0] # getting 'hostname'
+          update.delete(hostname + domain, 'AAAA')
+          update.delete(hostname + domain, 'A')
 
     # 8.
-    update.delete('db._dns-sd._udp', 'PTR')
-    update.delete('b._dns-sd._udp', 'PTR')
+    update.delete('b._dns-sd._udp', 'PTR', domain[1:] + "." + self.zone + ".")
 
     response = None
 

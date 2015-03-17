@@ -66,7 +66,7 @@
     array[a] = tmp;
   }
 
-// Adds a row in the table of rules.
+  // Adds a row in the table of rules.
   function addRule()
   {
 

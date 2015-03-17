@@ -174,7 +174,9 @@ class ServiceDiscovery:
                                      keyname,
                                      keyvalue,
                                      zone,
-                                     algorithm)
+                                     algorithm,
+                                     self.ttl, 
+                                     self.name)
 
     ## List of filtering rules.
     self.rules = []
@@ -272,6 +274,10 @@ class ServiceDiscovery:
     # valid state.
     self.clear()
 
+    # Announce the router to the global application
+    self.dns.addRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.addRecord(self.name, "TXT", "public=wlp4s0,p5p1", subdomain = False)
+
     self.browse()
     self.running_loop.run()
     self.logger.info("Loop quitted.")
@@ -300,6 +306,9 @@ class ServiceDiscovery:
 
     # Clear DNS.
     ans = self.dns.clearDNSServices()
+    self.dns.removeRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.removeRecord(self.name, "TXT", subdomain = False)
+
     if (ans != 0):
       self.logger.error("DNS zone not cleared properly: %s",
                         self.dns.errors[ans])
@@ -618,14 +627,12 @@ class ServiceDiscovery:
 
           # decode/encode reason explained in formatForDNS comments.
           stype     = stype.decode('utf-8').encode('utf-8')
-          ttl       = self.ttl
           dns_ans = self.dns.addService(name,
                                         stype,
                                         host,
                                         [], # addresses are already announced.
                                         port,
-                                        avahi.txt_array_to_string_array(txt),
-                                        ttl)
+                                        avahi.txt_array_to_string_array(txt))
           if (dns_ans == DNSWrapper.LABEL_NAME_ERROR):
             # The new name is not anymore valid (length problem). We notify
             # the user but we do not abort.
@@ -776,14 +783,12 @@ class ServiceDiscovery:
         addresses = [(serv_ip, address.decode('utf-8').encode('utf-8'))]
         port      = int(service['port'])
         txt       = self.txt_to_string_array(service['TXT'])
-        ttl       = self.ttl
         dns_ans = self.dns.addService(name,
                                       stype,
                                       host,
                                       addresses,
                                       port,
-                                      txt,
-                                      ttl)
+                                      txt)
         if (dns_ans == DNSWrapper.LABEL_NAME_ERROR):
           # The new name is not anymore valid (length problem). We notify
           # the user but we do not abort.
@@ -931,12 +936,12 @@ class ServiceDiscovery:
             return
 
           # Remove the service.
-          (name, host) = self.formatForDNS(service['name'],
-                                           service['hostname'],
-                                           service['if_name'],
-                                           service['if_ip'])
+          (name, host) = self.formatForDNS(str(service['name']),
+                                           str(service['hostname']),
+                                           str(service['if_name']),
+                                           int(service['if_ip']))
           ans = self.dns.removeService(name,
-                                       service['type'],
+                                       service['type'].decode('utf-8').encode('utf-8'),
                                        host,
                                        nb_type_ans[0]['COUNT(*)'] == 0,
                                        True)
@@ -1025,7 +1030,7 @@ class ServiceDiscovery:
 
     # Note that we remove the 6 last characters of hostname (.local)
     name_ = sname         +     self.alias +     append_ifc   +      append_ip
-    host_ = hostname[:-6] +"-"+ self.name  +"-"+ str(if_name) +"-v"+ str(if_ip)
+    host_ = hostname[:-6] + "-" + str(if_name) +"-v"+ str(if_ip)
 
     return (name_, host_)
 

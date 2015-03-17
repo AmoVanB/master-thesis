@@ -86,6 +86,14 @@ update.add('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 5, 'TXT',  'path=/t
 update.add('amo-laptop-12.kot.amo.vyncke.org.',              5, 'AAAA', '2001:6a8:2d80:2460::cafe')
 update.add('amo-laptop-12.kot.amo.vyncke.org.',              5, 'A', '1.2.3.4')
 
+update.delete('b._dns-sd._udp',                                 'PTR',  'kot.amo.vyncke.org.')
+update.delete('_services._dns-sd._udp.kot.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
+update.delete('_ipp._tcp.kot.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Kot\)._ipp._tcp.kot.amo.vyncke.org.')
+update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'SRV',  '0 0 80 amo-laptop-12.kot.amo.vyncke.org.')
+update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'TXT',  'path=/thesis')
+update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
+update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'A', '1.2.3.4')
+
 update.delete('b._dns-sd._udp',                                  'PTR',  'home.amo.vyncke.org.')
 update.delete('_services._dns-sd._udp.home.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
 update.delete('_ipp._tcp.home.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Home\)._ipp._tcp.home.amo.vyncke.org.')
@@ -101,6 +109,18 @@ update.add('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.', 5, 'SRV',  '0 0 8
 update.add('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.', 5, 'TXT',  'path=/thesis')
 update.add('amo-laptop-12.home.amo.vyncke.org.',               5, 'AAAA', '2001:6a8:2d80:2460::cafe')
 update.add('amo-laptop-12.home.amo.vyncke.org.',               5, 'A', '1.2.3.4')
+
+
+update.delete('Drucker._ipp._tcp.dell','TXT')
+
+update.delete('b._dns-sd._udp',                                  'PTR',  'home.amo.vyncke.org.')
+update.delete('_services._dns-sd._udp.home.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
+update.delete('_ipp._tcp.home.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Home\)._ipp._tcp.home.amo.vyncke.org.')
+update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','SRV',  '0 0 80 amo-laptop-12.home.amo.vyncke.org.')
+update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','TXT',  'path=/thesis')
+update.delete('amo-laptop-12.home.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
+update.delete('amo-laptop-12.home.amo.vyncke.org.',              'A', '1.2.3.4')
+
 
 response = None
 

@@ -59,7 +59,7 @@ class ServiceDiscoveryDaemon():
     ## The standard input to use.
     self.stdin_path = '/dev/null'
     ## The standard output to use.
-    self.stdout_path = '/dev/stdout'
+    self.stdout_path = '/dev/null'
     ## The standard error to use.
     self.stderr_path = '/dev/stderr'
     ## The PID file to use.
