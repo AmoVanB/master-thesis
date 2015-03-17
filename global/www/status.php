@@ -72,7 +72,7 @@ else
             $addresses = substr($addresses, 0, -2);          
 
             echo '<tr>';
-            echo '<td>'.urldecode(substr($service_entry['target'], 0, - 1 - strlen($type_entry['target']))).'</td>';
+            echo '<td>'.stripcslashes(str_replace('\032', ' ', substr($service_entry['target'], 0, - 1 - strlen($type_entry['target'])))).'</td>';
             echo '<td>'.substr($hostname, 0, - 1 - strlen($router_entry['target'])).'</td>';
             echo '<td>'.$port.'</td>';
             echo '<td>'.$addresses.'</td>';

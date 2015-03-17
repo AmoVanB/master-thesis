@@ -38,23 +38,23 @@ def escape(value):
     The escaped string.
   """
   if isinstance(value, (bytes, bytearray)):
-      value = value.replace(b'\\', b'\\\\')
-      value = value.replace(b'\n', b'\\n')
-      value = value.replace(b'\r', b'\\r')
-      value = value.replace(b' ', b'\ ')
-      value = value.replace(b'(', b'\(')
-      value = value.replace(b')', b'\)')
-      value = value.replace(b'\047', b'\134\047')  # single quotes
-      value = value.replace(b'\042', b'\134\042')  # double quotes
-      value = value.replace(b'\032', b'\134\032')  # for Win32
+    value = value.replace(b'\\', b'\\\\')
+    value = value.replace(b'\n', b'\\n')
+    value = value.replace(b'\r', b'\\r')
+    value = value.replace(b' ', b'\ ')
+    value = value.replace(b'(', b'\(')
+    value = value.replace(b')', b'\)')
+    value = value.replace(b'\047', b'\134\047')  # single quotes
+    value = value.replace(b'\042', b'\134\042')  # double quotes
+    value = value.replace(b'\032', b'\134\032')  # for Win32
   else:
-      value = value.replace('\\', '\\\\')
-      value = value.replace('\n', '\\n')
-      value = value.replace('\r', '\\r')
-      value = value.replace(' ', '\ ')
-      value = value.replace('(', '\(')
-      value = value.replace(')', '\)')
-      value = value.replace('\047', '\134\047')  # single quotes
-      value = value.replace('\042', '\134\042')  # double quotes
-      value = value.replace('\032', '\134\032')  # for Win32
+    value = value.replace('\\', '\\\\')
+    value = value.replace('\n', '\\n')
+    value = value.replace('\r', '\\r')
+    value = value.replace(' ', '\ ')
+    value = value.replace('(', '\(')
+    value = value.replace(')', '\)')
+    value = value.replace('\047', '\134\047')  # single quotes
+    value = value.replace('\042', '\134\042')  # double quotes
+    value = value.replace('\032', '\134\032')  # for Win32
   return value

@@ -9,18 +9,18 @@ import dns.tsigkeyring
 # version: http://www.dnspython.org/kits/1.12.0/
 
 try:
-  answers_IPv6 = dns.resolver.query('ks.vyncke.org', 'AAAA')
-  nsserver_address = None 
+answers_IPv6 = dns.resolver.query('ks.vyncke.org', 'AAAA')
+nsserver_address = None 
 
-  for rdata in answers_IPv6:
+for rdata in answers_IPv6:
+  nsserver_address = rdata.address
+  break
+
+if (nsserver_address == None):
+  answers_IPv4 = dns.resolver.query('ks.vyncke.org', 'A')
+  for rdata in answers_IPv4:
     nsserver_address = rdata.address
     break
-
-  if (nsserver_address == None):
-    answers_IPv4 = dns.resolver.query('ks.vyncke.org', 'A')
-    for rdata in answers_IPv4:
-      nsserver_address = rdata.address
-      break
 except dns.resolver.NXDOMAIN as e:
   print("The query name does not exist.")
   sys.exit(0)

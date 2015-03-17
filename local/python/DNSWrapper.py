@@ -111,10 +111,6 @@ class DNSWrapper:
     self.errors[SOCKET_ERROR]      = 'Socket error.'
 
 
-    # We add the b._dns-sd record in the zone in order to advertise the new
-    # subdomain to users browsing the zone.
-    self.addRecord("b._dns-sd._udp", "PTR", domain, subdomain = False) 
-
   def resolve(self, name):
     """Resolves a DNS name to its IP addresses.
 
@@ -187,10 +183,11 @@ class DNSWrapper:
                                keyring      = key,
                                keyalgorithm = self.algorithm)
 
+    name_domain = Miscellaneous.escape(("%r" % (name + domain))[1:-1])
     if (rdata == None):
-      update.delete(name + domain, rtype)
+      update.delete(name_domain, rtype)
     else:
-      update.delete(name + domain, rtype, rdata)
+      update.delete(name_domain, rtype, rdata)
 
     response = None
 
@@ -253,7 +250,8 @@ class DNSWrapper:
                                keyring      = key,
                                keyalgorithm = self.algorithm)
 
-    update.add(name + domain, self.ttl, rtype, rdata)
+    name_domain = Miscellaneous.escape(("%r" % (name + domain))[1:-1])
+    update.add(name_domain, self.ttl, rtype, rdata)
 
     response = None
 
@@ -330,18 +328,16 @@ class DNSWrapper:
       txt_string = '""'
     else:
       txt_string = txt_string[:-1] # Remove last space character
-    
 
     try:
-      name_type = Miscellaneous.escape("%s.%s" % (name, stype))
-      update.add('_services._dns-sd._udp' + domain, self.ttl,
-                 'PTR', stype + domain)
-      update.add(stype                    + domain, self.ttl,
-                 'PTR', name_type + domain)
-      update.add(name_type                + domain, self.ttl,
-                 'SRV','0 0 %i %s' % (port, host + domain))
-      update.add(name_type                + domain, self.ttl,
-                 'TXT', txt_string)
+      # Get escaped representation of the name and remove surrounding quotes.
+      name = Miscellaneous.escape(("%r" % name)[1:-1])
+      host = Miscellaneous.escape(("%r" % host)[1:-1])
+      name_type = name + ".%s" % stype
+      update.add('_services._dns-sd._udp' + domain, self.ttl, 'PTR', stype + domain)
+      update.add(stype     + domain, self.ttl, 'PTR', name_type + domain)
+      update.add(name_type + domain, self.ttl, 'SRV', '0 0 %i %s' % (port, host + domain))
+      update.add(name_type + domain, self.ttl, 'TXT', txt_string)
 
       for t in addresses:
         if (t[0] == 6):
@@ -417,8 +413,11 @@ class DNSWrapper:
                                keyring = key,
                                keyalgorithm = self.algorithm)
 
-    name_type = Miscellaneous.escape("%s.%s" % (name, stype))
-    update.delete(stype     + domain,     'PTR', name_type + domain)
+    # Get escaped representation of the name and remove surrounding quotes.
+    name = Miscellaneous.escape(("%r" % name)[1:-1])
+    host = Miscellaneous.escape(("%r" % host)[1:-1])
+    name_type = name + ".%s" % stype
+    update.delete(stype     + domain, 'PTR', name_type + domain)
     update.delete(name_type + domain, 'SRV')
     update.delete(name_type + domain, 'TXT')
 
@@ -527,8 +526,7 @@ class DNSWrapper:
     # 3. For each type, getting the different instances.
     for service_type in types_answer:
       s = str(service_type.target) 
-      labels = s.split('.')
-      stype = labels[0] + "." + labels[1]  # getting '_http._tcp'
+      stype = s[:- len(domain) - 2 - len(self.zone)]  # getting '_http._tcp'
 
       try:
         instances_answer = dns.resolver.query('%s.%s' % 
@@ -542,15 +540,14 @@ class DNSWrapper:
       # 5. For each instance, getting the hostnames.
       for instance in instances_answer:
         s = str(instance.target)
-        labels = s.split('.')
-        name = labels[0] + "." + labels[1] + "." + labels[2] # getting 'name._http._tcp'
-        
+        name = s[:- len(domain) - 2 - len(self.zone)] # getting 'name._http._tcp'
+
         try:
           host_answer = dns.resolver.query('%s.%s' % 
                                            (name + domain, self.zone), 'SRV')
         except dns.exception.DNSException as e:
           continue
-
+    
         # 6. Deleting [3] and [4]
         update.delete(name + domain, 'SRV')
         update.delete(name + domain, 'TXT')
@@ -558,8 +555,7 @@ class DNSWrapper:
         # 7. Deleting A and AAAA of each host.
         for host in host_answer:
           s = str(host.target)
-          labels = s.split('.')
-          hostname = labels[0] # getting 'hostname'
+          hostname = s[:- len(domain) - 2 - len(self.zone)] # getting 'hostname'
           update.delete(hostname + domain, 'AAAA')
           update.delete(hostname + domain, 'A')
 

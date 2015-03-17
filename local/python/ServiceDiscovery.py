@@ -76,7 +76,7 @@ class ServiceDiscovery:
       AvahiError:  Raised if a problem occurred connecting to Avahi.
     """
 
-    ## The logger used to log messages.
+    # The logger used to log messages.
     self.logger = logger
 
     # Checking configuration file versus DTD.
@@ -96,7 +96,7 @@ class ServiceDiscovery:
     # Getting name and alias.
     config = xml.getroot()
 
-    ## Name of the router added to the hostnames.
+    # Name of the router added to the hostnames (str)
     self.name  = config.get("name")
 
     # We ensure the name is only composed of lower-case letters and numbers.
@@ -104,7 +104,7 @@ class ServiceDiscovery:
       raise ConfigError("Router name must contain only lower-case letters and "+
                         "numbers.")    
     
-    ## Alias of the router added to the services names.
+    # Alias of the router added to the services names (str)
     self.alias = config.get("alias")
 
 
@@ -125,7 +125,7 @@ class ServiceDiscovery:
                         "acceptable range [1-65535]." % port)      
     db_port = str(port)
 
-    ## MySQLWrapper for fast SQL queries.
+    # MySQLWrapper for fast SQL queries.
     self.db = MySQLWrapper.MySQLWrapper(db_user,
                                         db_pwd,
                                         db_name,
@@ -158,7 +158,7 @@ class ServiceDiscovery:
                         "supported set.")
 
     # Restricting TTL to min and max values (RFC2181).
-    ## TTL value to set to the services/records published on the public DNS.
+    # TTL value to set to the services/records published on the public DNS (int)
     self.ttl = int(domain.get("ttl"))
     if (self.ttl < 0):
       self.logger.warning("TTL not in [0-2^31-1]. Changed from %i to 0.",
@@ -169,7 +169,7 @@ class ServiceDiscovery:
                           "2147483647.", self.ttl)
       self.ttl = 2147483647
 
-    ## DNSWrapper for fast DNS Update messages.
+    # DNSWrapper for fast DNS Update messages.
     self.dns = DNSWrapper.DNSWrapper(name_server,
                                      keyname,
                                      keyvalue,
@@ -178,7 +178,7 @@ class ServiceDiscovery:
                                      self.ttl, 
                                      self.name)
 
-    ## List of filtering rules.
+    # List of filtering rules.
     self.rules = []
     rules_tag = xml.find("./rules")
     if (rules_tag == None):
@@ -199,7 +199,6 @@ class ServiceDiscovery:
       self.logger.warning("No rules found. No services will be published.")
 
     # Getting the renaming preferences.
-    ## IP renaming strings.
     self.ip_aliases = dict()
 
     r_ip = xml.findall("./ip")
@@ -214,7 +213,6 @@ class ServiceDiscovery:
       else:
         self.logger.warning("Trying to rename unknown IP version. Ingored.")
 
-    ## Interfaces renaming strings.
     self.ifc_aliases = dict()
 
     r_ifc = xml.findall("./interface")
@@ -224,19 +222,19 @@ class ServiceDiscovery:
   
       self.ifc_aliases[ifc] = alias
 
-    ## Dictionary of the DBus Interfaces to service browsers.
+    # Dictionary of the DBus Interfaces to service browsers.
     # Key: interface - protocol - stype
     self.service_browsers = {}
 
-    ## Dictionary of the DBus Interfaces to record browsers.
+    # Dictionary of the DBus Interfaces to record browsers.
     # Key: interface - protocol - hostname
     self.record_browsers = {}
 
-    ## Dictionary of the DBus Interfaces to services resolvers.
+    # Dictionary of the DBus Interfaces to services resolvers.
     # Key: interface - protocol - name - stype
     self.service_resolvers = {}
 
-    ## The DBus Interface to the browser for service types.
+    # The DBus Interface to the browser for service types.
     self.service_type_browser = None
 
 
@@ -244,20 +242,20 @@ class ServiceDiscovery:
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
     try:
-      ## The system communication bus.
+      # The system communication bus.
       self.bus = dbus.SystemBus()
 
       # Proxy to the avahi server.
       proxy = self.bus.get_object(bus_name = avahi.DBUS_NAME,
-                             object_path = avahi.DBUS_PATH_SERVER)
+                                  object_path = avahi.DBUS_PATH_SERVER)
 
-      ## Interface to the Avahi server object.
+      # Interface to the Avahi server object.
       self.server = dbus.Interface(proxy,
                                    dbus_interface = avahi.DBUS_INTERFACE_SERVER)
     except Exception as e:
       raise AvahiError("Failed to connect to the Avahi server: %s." % e)
 
-    ## The running loop.
+    # The running loop.
     self.running_loop = gobject.MainLoop()
 
 
@@ -277,6 +275,7 @@ class ServiceDiscovery:
     # Announce the router to the global application
     self.dns.addRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
     self.dns.addRecord(self.name, "TXT", "public=wlp4s0,p5p1", subdomain = False)
+    self.dns.addRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
 
     self.browse()
     self.running_loop.run()
@@ -308,6 +307,7 @@ class ServiceDiscovery:
     ans = self.dns.clearDNSServices()
     self.dns.removeRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
     self.dns.removeRecord(self.name, "TXT", subdomain = False)
+    self.dns.removeRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
 
     if (ans != 0):
       self.logger.error("DNS zone not cleared properly: %s",
@@ -385,6 +385,12 @@ class ServiceDiscovery:
     newService and removeService are set as handlers.
     """
 
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface) # dbus.Int32 -> int
+    protocol  = int(protocol)  # dbus.Int32 -> int
+    stype     = str(stype)     # dbus.String -> str
+    domain    = str(domain)    # dbus.String -> str
+
     # Nothing to do if already browsing this type.
     if self.service_browsers.has_key((interface, protocol, stype)):
       return
@@ -408,8 +414,10 @@ class ServiceDiscovery:
                           (stype, self.interface_desc(interface, protocol), e))
       return
 
-    ifc.connect_to_signal('ItemNew', self.newService)
-    ifc.connect_to_signal('ItemRemove', self.removeService)
+    # We ask for UTF8 String to handle more easily the special characters that
+    # can appear in service names.
+    ifc.connect_to_signal('ItemNew', self.newService, utf8_strings=True)
+    ifc.connect_to_signal('ItemRemove', self.removeService, utf8_strings=True)
 
     # Mentioning we are browsing the service of this stype.
     self.service_browsers[(interface, protocol, stype)] = ifc
@@ -422,6 +430,13 @@ class ServiceDiscovery:
     serviceResolved is set as a handler.
     """
 
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface) # dbus.Int32 -> int
+    protocol  = int(protocol)  # dbus.Int32 -> int
+    name      = str(name)      # dbus.UTF8String -> str
+    stype     = str(stype)     # dbus.UTF8String -> str
+    domain    = str(domain)    # dbus.UTF8String -> str
+
     # Nothing to do if we are already resolving this service.
     if self.service_resolvers.has_key((interface, protocol, name, stype)):
       return
@@ -430,15 +445,16 @@ class ServiceDiscovery:
                       (name, stype, self.interface_desc(interface, protocol)))
 
     # Insert in database.
-    # Escaping and verifying values that will be part of the SQL query.
-    name_    = Miscellaneous.escape(name)
-    stype_   = Miscellaneous.escape(stype)
-    if_name  = self.interface_name(interface)
-    if_ip    = self.ip_version(protocol)
+    # %r will automatically generate surrounding single quotes and escape those
+    # in the string. It is thus not necessary to escape ourselves.
+    # SQL injection attack will not happen.
+    if_name   = self.interface_name(interface)
+    if_ip     = self.ip_version(protocol)
 
+    # We encode our unicode in a UTF8 string.
     ans = self.db.command(["INSERT INTO services " +
-                           "VALUES ('%s', '%i', '%s', '%s', " %
-                                   (if_name, if_ip, name_, stype_) +
+                           "VALUES (%r, '%i', %r, %r, " %
+                                   (if_name, if_ip, name, stype) +
                            "NULL, NULL, NULL, FALSE, FALSE);"])
     if (ans == 1062):
       # Duplicate entry. Should not occur, but it's not a problem.
@@ -468,7 +484,7 @@ class ServiceDiscovery:
                            self.interface_desc(interface, protocol), e))
       return
 
-    ifc.connect_to_signal('Found', self.serviceResolved)
+    ifc.connect_to_signal('Found', self.serviceResolved, utf8_strings=True)
 
     # Mentioning we are resolving this service.
     self.service_resolvers[(interface, protocol, name, stype)] = ifc
@@ -482,6 +498,14 @@ class ServiceDiscovery:
     Idem for the ServiceResolver and RecordBrowser objects: we free and remove
     them if they are not necessary anymore.
     """
+
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface) # dbus.Int32 -> int
+    protocol  = int(protocol)  # dbus.Int32 -> int
+    name      = str(name)      # dbus.UTF8String -> str
+    stype     = str(stype)     # dbus.UTF8String -> str
+    domain    = str(domain)    # dbus.UTF8String -> str
+
     # Nothing to do if we are not resolving this service.
     if not self.service_resolvers.has_key((interface, protocol, name, stype)):
       return
@@ -490,30 +514,33 @@ class ServiceDiscovery:
                       (name, stype, self.interface_desc(interface, protocol)))
 
     # Remove from database.
-    # Escaping and verifying values that will be part of the SQL query.
-    name_   = Miscellaneous.escape(name)
-    stype_  = Miscellaneous.escape(stype)
-    if_name = self.interface_name(interface)
-    if_ip   = self.ip_version(protocol)
+    if_name   = self.interface_name(interface)
+    if_ip     = self.ip_version(protocol)
     
     # Getting the service's hostname and announced status before removal.
     response = self.db.query("SELECT hostname, announced FROM services " +
-                             "WHERE name   ='%s' " % name_               +
-                               "AND type   ='%s' " % stype_              +
-                               "AND if_name='%s' " % if_name             +
+                             "WHERE name   = %r "  % name    +
+                               "AND type   = %r "  % stype   +
+                               "AND if_name= %r "  % if_name +
                                "AND if_ip  ='%i';" % if_ip)
     if (response == None or len(response) == 0):
-      self.stop(error = "Database failed.")
+      self.stop(error = "Database failed 1.")
       return
 
+    # MySQL will return a bytearray. We convert it to a classical string.
     hostname = response[0]['hostname']
+    if (hostname != None):
+      hostname = str(hostname)
+    else:
+      hostname = ""
+
     announced = response[0]['announced']
 
     # Removal.    
-    ans = self.db.command(["DELETE FROM services "                +
-                           "WHERE name   ='%s' " % name_          +
-                           "AND   type   ='%s' " % stype_         +
-                           "AND   if_name='%s' " % if_name        +
+    ans = self.db.command(["DELETE FROM services "         +
+                           "WHERE name   = %r  " % name    +
+                           "AND   type   = %r  " % stype   +
+                           "AND   if_name= %r  " % if_name +
                            "AND   if_ip  ='%i';" % if_ip])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
@@ -527,21 +554,28 @@ class ServiceDiscovery:
     # - services of the same type that are announced,
     # - services of the same hostname that are announced,
     # - services of the same hostname (announced or not).
+    # Note that if the service was not resolved, hostname can be None.
+    # However, since we converted it into "" this does not lead to any
+    # incoherence in the following instructions.
     nb_type_announced_ans = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE type='%s' " % stype_       +
+                                          "WHERE type= %r " % stype         +
                                           "AND   announced='1';")
     nb_host_announced_ans = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE hostname='%s' " % hostname +
+                                          "WHERE hostname= %r "  % hostname +
+                                          "AND   if_name = %r "  % if_name  +
+                                          "AND   if_ip   ='%i' " % if_ip    +
                                           "AND   announced='1';")
     nb_host_ans           = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE hostname='%s';" % hostname)
+                                          "WHERE hostname= %r  " % hostname +
+                                          "AND   if_name = %r  " % if_name  +
+                                          "AND   if_ip   ='%i';" % if_ip)
     if (nb_type_announced_ans == None   or 
         nb_host_announced_ans == None   or
         nb_host_ans == None             or 
         len(nb_type_announced_ans) == 0 or
         len(nb_host_announced_ans) == 0 or
         len(nb_host_ans) == 0):
-      self.stop(error = "Database failed.")
+      self.stop(error = "Database failed 2.")
       return
 
     nb_host_announced = nb_host_announced_ans[0]['COUNT(*)']
@@ -550,8 +584,11 @@ class ServiceDiscovery:
   
     # If the service was announced, we remove it from the DNS.
     if (announced):
-      (name_, host_) = self.formatForDNS(name, hostname, if_name, if_ip)
-      ans = self.dns.removeService(name_, stype.encode('utf-8'), host_, 
+      (name_dns, host_dns) = self.formatForDNS(name,
+                                               hostname,
+                                               if_name,
+                                               if_ip)
+      ans = self.dns.removeService(name_dns, stype, host_dns, 
                                    # Remove type PTR if no more services of this
                                    # type that are announced.
                                    nb_type_announced == 0,
@@ -562,18 +599,20 @@ class ServiceDiscovery:
         self.stop(error = "DNS Update failed. %s" % self.dns.errors[dns_ans])
         return
       
-      self.logger.info("%s.%s removed from the DNS.", name_, stype)
+      self.logger.info("%s.%s removed from the DNS.", name_dns, stype)
 
-    if (nb_host == 0 and hostname != None):
+    if (nb_host == 0 and hostname != ""):
       # Stop browsing A/AAAA record for this hostname since he hosts no more 
       # services.
-      self.record_browsers[(interface, protocol, unicode(hostname))][0].Free()
-      self.record_browsers[(interface, protocol, unicode(hostname))][1].Free()
-      del self.record_browsers[(interface, protocol, unicode(hostname))]
+      self.record_browsers[(interface, protocol, hostname)][0].Free()
+      self.record_browsers[(interface, protocol, hostname)][1].Free()
+      del self.record_browsers[(interface, protocol, hostname)]
 
       # We do not need the addresses of the host anymore.
-      ans = self.db.command(["DELETE FROM addresses WHERE hostname ='%s';" %
-                             hostname])
+      ans = self.db.command(["DELETE FROM addresses "            +
+                             "WHERE hostname= %r    " % hostname +
+                             "AND   if_name = %r    " % if_name  +
+                             "AND   if_ip   ='%i';  " % if_ip])
       if (ans != 0):
         self.stop(error = "Database failed (MySQL error: %i)." % ans)
         return
@@ -590,31 +629,38 @@ class ServiceDiscovery:
     already available publicly.
     """
 
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface)  # dbus.Int32 -> int
+    protocol  = int(protocol)   # dbus.Int32 -> int
+    name      = str(name)       # dbus.UTF8String -> str
+    stype     = str(stype)      # dbus.UTF8String -> str
+    domain    = str(domain)     # dbus.UTF8String -> str
+    host      = str(host)       # dbus.UTF8String -> str
+    aprotocol = int(aprotocol)  # dbus.Int32 -> int
+    address   = str(address)    # dbus.UTF8String -> str
+    port      = int(port)       # dbus.UInt16 -> int
+    txt       = avahi.txt_array_to_string_array(txt)
+                                # dbus.Array -> list
+
     self.logger.debug("= Resolved %s.%s to %s on %s.", name, stype, host,
                       self.interface_desc(interface, protocol))
 
-    hostname = host
-
     # Insertion in database.
-    # Escaping and verifying values that will be part of the SQL query.
-    host_    = Miscellaneous.escape(host)
-    name_    = Miscellaneous.escape(name)
-    stype_   = Miscellaneous.escape(stype)
-    port     = int(port)
-    txt_     = self.txt_to_byte_array_as_string(txt)
-    if_name  = self.interface_name(interface)
-    if_ip    = self.ip_version(protocol)
-    resolved = 0 # Service considered resolved when we have an address for it.
-    announced= 0
+    txt_sql   = self.txt_to_byte_array_as_string(txt)
+    if_name   = self.interface_name(interface)
+    if_ip     = self.ip_version(protocol)
+    resolved  = 0 # Service considered resolved when we have an address for it.
+    announced = 0
 
     # If we are already browsing for the hostname, maybe we already have an
     # address. We therefore look in the database.
-    if self.record_browsers.has_key((interface, protocol, unicode(hostname))):
-      ans = self.db.query("SELECT COUNT(*) FROM addresses WHERE hostname = " +
-                          "'%s'" % host_ + " AND if_name = '%s'"  % if_name + 
-                                           " AND if_ip =   '%i';" % if_ip) 
+    if self.record_browsers.has_key((interface, protocol, host)):
+      ans = self.db.query("SELECT COUNT(*) FROM addresses " +
+                          "WHERE hostname = %r" % host      +
+                          "AND if_name    = %r" % if_name   + 
+                          "AND if_ip      ='%i';" % if_ip) 
       if (ans == None or len(ans) == 0):
-        self.stop(error = "Database failed.")
+        self.stop(error = "Database failed 3.")
         return
 
       if (ans[0]['COUNT(*)'] >= 1):
@@ -623,41 +669,39 @@ class ServiceDiscovery:
 
         # We check if the service has to be announced or not.
         if (self.toAnnounce(name, stype, if_name, if_ip, host, port)):
-          (name, host) = self.formatForDNS(name, host, if_name, if_ip)
+          (name_dns, host_dns) = self.formatForDNS(name, host, if_name, if_ip)
 
-          # decode/encode reason explained in formatForDNS comments.
-          stype     = stype.decode('utf-8').encode('utf-8')
-          dns_ans = self.dns.addService(name,
+          dns_ans = self.dns.addService(name_dns,
                                         stype,
-                                        host,
+                                        host_dns,
                                         [], # addresses are already announced.
                                         port,
-                                        avahi.txt_array_to_string_array(txt))
+                                        txt)
           if (dns_ans == DNSWrapper.LABEL_NAME_ERROR):
             # The new name is not anymore valid (length problem). We notify
             # the user but we do not abort.
-            self.logger.error("Service " + name + "." + stype + " of " + host +
-                              " presents a length problem. Service not"       +
-                              " announced.")
+            self.logger.error("Service " + name_dns + "." + stype + " of "     + 
+                              host_dns + " presents a length problem. Service" +
+                              " not announced.")
             announced = 0
           elif (dns_ans != 0):
             self.stop(error = "DNS Update failed. %s"% self.dns.errors[dns_ans])
             return
           else:
             self.logger.info("%s.%s (%s) announced on DNS with existing " +
-                             "address.", name, stype, host)
+                             "address.", name_dns, stype, host_dns)
             announced = 1
 
     # Insertion.
-    ans = self.db.command(["UPDATE services SET "          +
-                           "hostname = '%s', " % host_     +
-                           "port     = '%i', " % port      +
-                           "TXT      = '%s', " % Miscellaneous.escape(txt_) +
-                           "announced= '%i', " % announced +
-                           "resolved = '%i'  " % resolved  +
-                           "WHERE name   ='%s' " % name_   + 
-                             "AND type   ='%s' " % stype_  +
-                             "AND if_name='%s' " % if_name +
+    ans = self.db.command(["UPDATE services SET "            +
+                           "hostname = %r,  "    % host      +
+                           "port     ='%i', "    % port      +
+                           "TXT      ='%s', "    %Miscellaneous.escape(txt_sql)+
+                           "announced='%i', "    % announced +
+                           "resolved ='%i'  "    % resolved  +
+                           "WHERE name   = %r  " % name      + 
+                             "AND type   = %r  " % stype     +
+                             "AND if_name= %r  " % if_name   +
                              "AND if_ip  ='%i';" % if_ip])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
@@ -666,7 +710,7 @@ class ServiceDiscovery:
     # If the host is not on the local LAN or if we already browse for it, we 
     # are done (no need to browse).
     if (not host.endswith(".local") or
-        self.record_browsers.has_key((interface, protocol, unicode(hostname)))):
+        self.record_browsers.has_key((interface, protocol, host))):
       return
 
     # Browse A/AAAA record.
@@ -696,13 +740,13 @@ class ServiceDiscovery:
                           (host, self.interface_desc(interface, protocol), e))
       return
 
-    ifc4.connect_to_signal('ItemNew', self.newRecord)
-    ifc6.connect_to_signal('ItemNew', self.newRecord)
-    ifc4.connect_to_signal('ItemRemove', self.removeRecord)
-    ifc6.connect_to_signal('ItemRemove', self.removeRecord)
+    ifc4.connect_to_signal('ItemNew', self.newRecord, utf8_strings=True)
+    ifc6.connect_to_signal('ItemNew', self.newRecord, utf8_strings=True)
+    ifc4.connect_to_signal('ItemRemove', self.removeRecord, utf8_strings=True)
+    ifc6.connect_to_signal('ItemRemove', self.removeRecord, utf8_strings=True)
 
     # Mentioning we are browsing the records for this host.
-    self.record_browsers[(interface, protocol, unicode(hostname))] = (ifc4,ifc6)
+    self.record_browsers[(interface, protocol, host)] = (ifc4, ifc6)
 
 
   def newRecord(self, interface, protocol, name, clazz, type, rdata, flags):
@@ -710,6 +754,13 @@ class ServiceDiscovery:
     services of the hostname as resolved. If a service has to be announced,
     it is (along with the new address).
     """
+
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface)          # dbus.Int32 -> int
+    protocol  = int(protocol)           # dbus.Int32 -> int
+    name      = str(name)               # dbus.String -> str
+    clazz     = int(clazz)              # dbus.UInt16 -> int
+    type      = int(type)               # dbus.UInt16 -> int
 
     if (type == 1):
       serv_ip = 4
@@ -731,26 +782,23 @@ class ServiceDiscovery:
                       self.interface_desc(interface, protocol))
 
     # Insertion in database.
-    # Escaping and verifying values that will be part of the SQL query.
-    name_    = Miscellaneous.escape(name)
-    address_ = Miscellaneous.escape(address)
     if_name  = self.interface_name(interface)
     if_ip    = self.ip_version(protocol)
 
     # Insert the address and set the services of the hostname resolved.
     ans = self.db.command(["INSERT INTO addresses " +
-                           "VALUES ('%s', '%i', '%s', '%i', '%s');" %
-                                   (if_name, if_ip, name_, serv_ip, address_),
+                           "VALUES (%r, '%i', %r, '%i', %r);" %
+                                   (if_name, if_ip, name, serv_ip, address),
 
                            "UPDATE services SET " +
                                   "resolved='%i' " % 1       +  
-                           "WHERE hostname ='%s' " % name_   + 
-                             "AND if_name  ='%s' " % if_name +
+                           "WHERE hostname = %r "  % name    + 
+                             "AND if_name  = %r "  % if_name +
                              "AND if_ip    ='%i';" % if_ip])
     if (ans == 1062):
       # Duplicate entry. Should not occur, but it's not a problem.
       self.logger.warning("Duplicate address %s for %s on %s. Ignored." %
-                          (address_, name,
+                          (address, name,
                            self.interface_desc(interface, protocol)))
     elif (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
@@ -758,34 +806,34 @@ class ServiceDiscovery:
 
     # Selecting all the services of the hostname.
     ans = self.db.query("SELECT * FROM services WHERE " +
-                        "hostname    ='%s' " % name_    + 
-                        "AND if_name ='%s' " % if_name  +
+                        "hostname    = %r " % name      + 
+                        "AND if_name = %r " % if_name   +
                         "AND if_ip   ='%i';" % if_ip)
     if (ans == None):
-      self.stop(error = "Database failed.")
+      self.stop(error = "Database failed. 4")
       return
 
     # For each service, if it has to be, we announce it (as the service is now
     # resolved).
     for service in ans:
-      if (self.toAnnounce(service['name'],
-                          service['type'],
-                          service['if_name'],
-                          service['if_ip'],
-                          service['hostname'],
-                          service['port'])):
-        (name, host) = self.formatForDNS(service['name'],
-                                         service['hostname'],
-                                         service['if_name'],
-                                         service['if_ip'])
-        # decode/encode reason explained in formatForDNS comments.
-        stype     = service['type'].decode('utf-8').encode('utf-8')
-        addresses = [(serv_ip, address.decode('utf-8').encode('utf-8'))]
+      # We convert SQL types to our own.
+      if (self.toAnnounce(str(service['name']),
+                          str(service['type']),
+                          str(service['if_name']),
+                          int(service['if_ip']),
+                          str(service['hostname']),
+                          int(service['port']))):
+        (name_dns, host_dns) = self.formatForDNS(str(service['name']),
+                                                 str(service['hostname']),
+                                                 str(service['if_name']),
+                                                 int(service['if_ip']))
+        stype     = str(service['type'])
+        addresses = [(serv_ip, address)]
         port      = int(service['port'])
         txt       = self.txt_to_string_array(service['TXT'])
-        dns_ans = self.dns.addService(name,
+        dns_ans = self.dns.addService(name_dns,
                                       stype,
-                                      host,
+                                      host_dns,
                                       addresses,
                                       port,
                                       txt)
@@ -793,26 +841,25 @@ class ServiceDiscovery:
           # The new name is not anymore valid (length problem). We notify
           # the user but we do not abort.
           # Note: decode to send the unicode string.
-          self.logger.error("Service " + name.decode('utf-8') + "." + stype +
-                            " of " + host + " presents a length problem. "  +
-                            " Service not announced.")
+          self.logger.error("Service " + name_dns + "." + stype + " of " + 
+                            host_dns + " presents a length problem. "    +
+                            "Service not announced.")
           announced = 0
         elif (dns_ans != 0):
           self.stop(error = "DNS Update failed. %s" % self.dns.errors[dns_ans])
           return
         else:
           self.logger.info("%s.%s (%s) announced on DNS with address %s.",
-                           name.decode('utf-8'), stype, host, address)
+                           name_dns, stype, host_dns, address)
           announced = 1
 
-        # Set the service announced. No need to escape since values come from
-        # an SQL reply.
+        # Set the service announced. 
         sql_ans = self.db.command(["UPDATE services SET " +
-                                   "announced='%i' "      % announced          +  
-                                   "WHERE name    ='%s' " % service['name']    + 
-                                    "AND  type    ='%s' " % service['type']    +
-                                    "AND  if_name ='%s' " % service['if_name'] +
-                                    "AND  if_ip   ='%i';" % service['if_ip']])
+                                   "announced='%i' "     % announced           +  
+                                   "WHERE name    = %r " % str(service['name'])+ 
+                                    "AND  type    = %r " % str(service['type'])+
+                                    "AND  if_name = %r " % str(service['if_name'])+
+                                    "AND  if_ip   ='%i';"% service['if_ip']])
         if (sql_ans != 0):
           self.stop(error = "Database failed (MySQL error: %i)." % sql_ans)
           return  
@@ -823,6 +870,14 @@ class ServiceDiscovery:
     if necessary. It removes also the associated services from the DNS if this
     was the last address of the hostname.
     """
+
+    # Conversion from dbus types to classical Python types.
+    interface = int(interface)          # dbus.Int32 -> int
+    protocol  = int(protocol)           # dbus.Int32 -> int
+    name      = str(name)               # dbus.String -> str
+    clazz     = int(clazz)              # dbus.UInt16 -> int
+    type      = int(type)               # dbus.UInt16 -> int
+
 
     if (type == 1):
       serv_ip = 4
@@ -844,32 +899,30 @@ class ServiceDiscovery:
                       self.interface_desc(interface, protocol))
     
     # Deletion from database.
-    # Escaping and verifying values that will be part of the SQL query.
-    name_   = Miscellaneous.escape(name)
     if_name = self.interface_name(interface)
     if_ip   = self.ip_version(protocol)
 
     ans = self.db.command(["DELETE FROM addresses " +
-                           "WHERE if_name  ='%s' " % if_name +
+                           "WHERE if_name  = %r  " % if_name +
                            "  AND if_ip    ='%i' " % if_ip   +
-                           "  AND hostname ='%s' " % name_   +
+                           "  AND hostname = %r  " % name    +
                            "  AND ip       ='%i' " % serv_ip +
-                           "  AND address  ='%s';" % address])
+                           "  AND address  = %r; " % address])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
 
     # Removing address from the DNS if announced.
     ans = self.db.query("SELECT announced FROM services WHERE " +
-                        "hostname    ='%s' " % name_    + 
-                        "AND if_name ='%s' " % if_name  +
+                        "hostname    = %r  " % name     + 
+                        "AND if_name = %r  " % if_name  +
                         "AND if_ip   ='%i';" % if_ip)
     if (ans == None):
-      self.stop(error = "Database failed.")
+      self.stop(error = "Database failed. 5")
       return
 
     # If len(ans) == 0: The address removal has been handled by removeService.
-    if len(ans) > 0 and ans[0]['announced']:
+    if (len(ans) > 0 and ans[0]['announced']):
       (s, host) = self.formatForDNS("", name, if_name, if_ip)
 
       if (serv_ip == 4):
@@ -889,12 +942,12 @@ class ServiceDiscovery:
 
     # Getting the number of remaining address for the hostname.
     nb_addr_host_ans = self.db.query("SELECT COUNT(*) FROM addresses " +
-                                     "WHERE hostname ='%s' " % name_   +
-                                       "AND if_name  ='%s' " % if_name +
-                                       "AND if_ip    ='%s';" % if_ip)
+                                     "WHERE hostname = %r " % name     +
+                                       "AND if_name  = %r " % if_name  +
+                                       "AND if_ip    ='%i';" % if_ip)
 
     if (nb_addr_host_ans == None or len(nb_addr_host_ans) == 0):
-      self.stop(error = "Database failed.")
+      self.stop(error = "Database failed. 6")
       return
 
     nb_addr_host = nb_addr_host_ans[0]['COUNT(*)']
@@ -906,11 +959,11 @@ class ServiceDiscovery:
     if (nb_addr_host == 0):
       # Getting all the services of the host.
       ans = self.db.query("SELECT * FROM services WHERE " +
-                          "hostname    ='%s' " % name_    + 
-                          "AND if_name ='%s' " % if_name  +
+                          "hostname    = %r "  % name     + 
+                          "AND if_name = %r "  % if_name  +
                           "AND if_ip   ='%i';" % if_ip)
       if (ans == None):
-        self.stop(error = "Database failed.")
+        self.stop(error = "Database failed. 7")
         return
 
       # Removing from the DNS all services that are announced.
@@ -918,38 +971,39 @@ class ServiceDiscovery:
         if (service['announced']):
           response = self.db.command(["UPDATE services SET resolved ='0', "+
                                                           "announced='0'  "+
-                                      "WHERE hostname ='%s' "% name_       + 
-                                        "AND if_name  ='%s' "% if_name     +
-                                        "AND if_ip    ='%i' "% if_ip       +
-                                        "AND name     ='%s' "% service['name']+
-                                        "AND type     ='%s';"% service['type']])
+                                      "WHERE hostname = %r " % name        + 
+                                        "AND if_name  = %r " % if_name     +
+                                        "AND if_ip    ='%i'" % if_ip       +
+                                        "AND name     = %r " % str(service['name'])+
+                                        "AND type     = %r;" % str(service['type'])])
           if (response != 0):
             self.stop(error = "Database failed (MySQL error: %i)." % response)
             return
           
           # Looking if there are still services of this type.
           nb_type_ans = self.db.query("SELECT COUNT(*) FROM services "+
-                                      "WHERE type      ='%s' "% service['type']+
+                                      "WHERE type      = %r " % str(service['type']) +
                                         "AND announced ='1';")
           if (nb_type_ans == None or len(nb_type_ans) == 0):
-            self.stop(error = "Database failed.")
+            self.stop(error = "Database failed. 8")
             return
 
           # Remove the service.
-          (name, host) = self.formatForDNS(str(service['name']),
-                                           str(service['hostname']),
-                                           str(service['if_name']),
-                                           int(service['if_ip']))
-          ans = self.dns.removeService(name,
-                                       service['type'].decode('utf-8').encode('utf-8'),
-                                       host,
+          (name_dns, host_dns) = self.formatForDNS(str(service['name']),
+                                                   str(service['hostname']),
+                                                   str(service['if_name']),
+                                                   int(service['if_ip']))
+          ans = self.dns.removeService(name_dns,
+                                       str(service['type']),
+                                       host_dns,
                                        nb_type_ans[0]['COUNT(*)'] == 0,
                                        True)
           if (ans != 0):
             self.stop(error = "DNS Update failed. %s" % self.dns.errors[ans])
             return
 
-          self.logger.info("%s.%s removed from the DNS.", name, service['type'])
+          self.logger.info("%s.%s removed from the DNS.", 
+                           name_dns, service['type'])
 
 
   def toAnnounce(self, name, stype, if_name, if_ip, hostname, port):
@@ -1010,27 +1064,19 @@ class ServiceDiscovery:
       tuple (sname, host) formatted.
     """
 
-    # Decoding and encoding can seem silly but is not done on purpose.
-    # The decode operations ensures to get the unicode string of the input
-    # whatever the initial type (bytearray, string, unicode string).
-    # The encode method then allows to get a string.
-    sname    = sname.decode('utf-8').encode('utf-8')
-    hostname = hostname.decode('utf-8').encode('utf-8')
-    if_name  = if_name.decode('utf-8').encode('utf-8')
-
-    if (self.ifc_aliases.has_key(str(if_name))):
-      append_ifc = self.ifc_aliases[str(if_name)]
+    if (self.ifc_aliases.has_key(if_name)):
+      append_ifc = self.ifc_aliases[if_name]
     else:
-      append_ifc = " @ " + str(if_name)
+      append_ifc = " @ " + if_name
 
-    if (self.ip_aliases.has_key(int(if_ip))):
-      append_ip = self.ip_aliases[int(if_ip)]
+    if (self.ip_aliases.has_key(if_ip)):
+      append_ip = self.ip_aliases[if_ip]
     else:
-      append_ip = " (IPv" + str(if_ip) + ")"
+      append_ip = " (IPv" + if_ip + ")"
 
     # Note that we remove the 6 last characters of hostname (.local)
-    name_ = sname         +     self.alias +     append_ifc   +      append_ip
-    host_ = hostname[:-6] + "-" + str(if_name) +"-v"+ str(if_ip)
+    name_ = sname + self.alias + append_ifc + append_ip
+    host_ = hostname[:-6] + "-" + if_name + "-v" + str(if_ip)
 
     return (name_, host_)
 
@@ -1079,7 +1125,7 @@ class ServiceDiscovery:
     if interface <= 0:
       return "n/a"
     else:
-      return self.server.GetNetworkInterfaceNameByIndex(interface)
+      return str(self.server.GetNetworkInterfaceNameByIndex(interface))
 
 
   def interface_desc(self, interface, protocol):
@@ -1095,12 +1141,12 @@ class ServiceDiscovery:
     if interface == avahi.IF_UNSPEC and protocol == avahi.PROTO_UNSPEC:
       return "n/a"
     else:
-      return (self.interface_name(interface) + ":" +
-              str(self.ip_version(protocol)))
+      return (self.interface_name(interface) + " (" +
+              self.ip_name(protocol) +  ")")
 
 
   def txt_to_byte_array_as_string(self, txt):
-    """From a avahi TXT value, returns its representation as described in
+    """From an array of string, returns its representation as described in
     section 6.6 of RFC6763. The byte array is returned as a string.
 
     Args:
@@ -1111,8 +1157,7 @@ class ServiceDiscovery:
     """
 
     result = ''
-    strings = avahi.txt_array_to_string_array(txt)
-    for elem in strings:
+    for elem in txt:
       result = result + chr(len(elem))
       result = result + elem
     return result
