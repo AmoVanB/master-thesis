@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GUI for Service Discovery Configuration</title>
+  <title>GUI for Policy Configuration</title>
   <meta charset="utf-8">
   <meta name="description" content="Web GUI for Service Discovery Configuration">
   <meta name="keywords" content="ulg,montefiore,vanbemten,van,bemten,amaury,master,thesis,service,mdns,dnssd,bonjour,zeroconf,cisco,vyncke,eric,leduc,guy">
@@ -27,16 +27,16 @@
   <div class="container-fluid">
     <div class="row">
       <header class="col-xs-12">
-        <h1>Service Discovery Configuration</h1>
+        <h1>Policy Configuration</h1>
         <?php
           // Advertise user if daemon is not running.
-          if (!file_exists("/var/run/service-discovery/pid"))
-            echo '<p>Note: service discovery daemon is not running.</p>';
+          if (!file_exists("/var/run/policy-manager/pid"))
+            echo '<p>Note: policy manager daemon is not running.</p>';
           else
           {
             // Advertise user if config file has been changed.
-            if (file_exists("/etc/service-discovery/config.xml")) // Should always be true.
-              if (filemtime("/var/run/service-discovery/pid") < filemtime("/etc/service-discovery/config.xml"))
+            if (file_exists("/etc/policy-manager/config.xml")) // Should always be true.
+              if (filemtime("/var/run/policy-manager/pid") < filemtime("/etc/policy-manager/config.xml"))
                 echo '<p>Note: configuration file has been changed since daemon startup.</p>';
           }
         ?>

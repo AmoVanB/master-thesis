@@ -12,12 +12,11 @@
     $condition = true;
     foreach ($IDs as $id)
     {
-      $condition = $condition && isset($_POST["if-name-".$id]);
-      $condition = $condition && isset($_POST["if-ip-".$id]);
+      $condition = $condition && isset($_POST["src-address-".$id]);
+      $condition = $condition && isset($_POST["src-mask-".$id]);
       $condition = $condition && isset($_POST["name-".$id]);
       $condition = $condition && isset($_POST["type-".$id]);
-      $condition = $condition && isset($_POST["host-".$id]);
-      $condition = $condition && isset($_POST["port-".$id]);
+      $condition = $condition && isset($_POST["router-".$id]);
       $condition = $condition && isset($_POST["action-".$id]);
     }
 

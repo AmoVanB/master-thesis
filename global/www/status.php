@@ -1,5 +1,6 @@
 <p>This page displays the current status of the network, i.e. the list of routers involved in the system and the services announced in their subdomain.</p>
 
+<p>Click on a router's subdomain or on a particular type to show/hide the corresponding services.</p>
 
 <div class="table-responsive panel panel-default">
 
@@ -7,13 +8,14 @@
 
 $domain = 'amo.vyncke.org.';
 
-$routers_results = dns_get_record( '_routers._dns-sd._udp.'.$domain, DNS_PTR);
+$routers_results = dns_get_record( 'b._dns-sd._udp.'.$domain, DNS_PTR);
 
 if (sizeof($routers_results) == 0)
     echo '<div class="panel-heading">No routers found.</div>';
 else
 {
   $i = 0;
+  $j = 0;
   foreach ($routers_results as $router_entry)
   {
     $i++;
@@ -27,7 +29,6 @@ else
       echo '<thead><tr><th>No types found.</th></tr></thead>';
     else
     {
-      $j = 0;
       foreach ($type_results as $type_entry)
       {
         $j++;
@@ -72,7 +73,7 @@ else
             $addresses = substr($addresses, 0, -2);          
 
             echo '<tr>';
-            echo '<td>'.stripcslashes(str_replace('\032', ' ', substr($service_entry['target'], 0, - 1 - strlen($type_entry['target'])))).'</td>';
+            echo '<td>'.stripcslashes(str_replace('\032', ' ', substr(utf8_decode($service_entry['target']), 0, - 1 - strlen($type_entry['target'])))).'</td>';
             echo '<td>'.substr($hostname, 0, - 1 - strlen($router_entry['target'])).'</td>';
             echo '<td>'.$port.'</td>';
             echo '<td>'.$addresses.'</td>';

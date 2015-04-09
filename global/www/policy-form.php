@@ -4,13 +4,23 @@
   {
     $dom = new DomDocument();
     $dom->load('/etc/policy-manager/config.xml');
-    $rules = $dom->getElementsByTagName('service');
+    $rules = $dom->getElementsByTagName('rule');
     $numberOfRules = $rules->length;
+    $domain = $dom->getElementsByTagName('domain')->item(0)->getAttribute("name");
   }
   catch (Exception $e)
   {
     echo '<p>Note: '.$e->getMessage().'</p>';
   }
+
+  $routers_results = dns_get_record( 'b._dns-sd._udp.'.$domain, DNS_PTR);
+  $routers = array();
+
+  if (sizeof($routers_results) == 0)
+      echo '<div class="panel-heading">No routers found.</div>';
+  else
+    foreach ($routers_results as $router_entry)
+      array_push($routers, explode(".", $router_entry['target'])[0]);
 
   /* Javascript script creates two vars. The listed rules will be arranged in
      a table. Each rule will be assigned an ID. The maxID variable keeps the
@@ -71,12 +81,18 @@
   {
 
     var row = '<tr id="rule-' + ++maxID + '">';
-    row += '<td><input type="text" name="if-name-'+ maxID +'" value=".*" required size=15 /\></td>';
-    row += '<td><input type="text" name="if-ip-'+ maxID +'"   value=".*" required size=10 /\></td>';
+    row += '<td><input type="text" name="src-address-'+ maxID +'" value="0.0.0.0" required /\></td>';
+    row += '<td><input type="number" value="0" name="src-mask-'+ maxID +'" min="0" max="128" required /\></td>';
     row += '<td><input type="text" name="name-'+ maxID +'"    value=".*" required         /\></td>';
     row += '<td><input type="text" name="type-'+ maxID +'"    value=".*" required         /\></td>';
-    row += '<td><input type="text" name="host-'+ maxID +'"    value=".*" required         /\></td>';
-    row += '<td><input type="text" name="port-'+ maxID +'"    value=".*" required size=10 /\></td>';
+    row += '<td><input type="text" name="router-'+ maxID +'"    value="*" list="routers"        required /\></td>';
+    row += '<datalist id="routers">';
+    <?php
+      foreach ($routers as $router)
+        echo "row += '<option value=\"".$router."\">';\n";
+    ?>
+    row += '<option value="*">';
+    row += '</datalist>';
     row += '<td><select name="action-'+ maxID +'">';
     row += '    <option value="allow" selected>Allow</option>';
     row += '    <option value="deny">Deny</option>';
@@ -161,10 +177,17 @@
   }
 </script>
 
-<p>Each resolved service will go through the following list of rules to know whether it has to be announced or not on the public DNS. The first rule that is matched determines the action. If no rule is matched, the service will be denied.</p>
-<p><em>Matching</em> is based on regular expressions. For a service to match a rule, each of its fields must match the corresponding regular expression. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example <code>.*</code> matches any expression.</p>
+<p>Each service announced on the public domain will go through the following list of rules to know whether connections to it have to be accepted or not. The first rule that is matched determines the action. If no rule is matched, connections for the service will be denied.</p>
 
-<form class="well table-responsive" action="index.php?page=announcement-preferences" method="POST">
+<p>The application will automatically distinguish IPv6 from IPv4 addresses and those can hence be entered freely.</p>
+
+<p>The <em>mask</em> field specifies the number of bit in the IP address that will be checked for matching. A mask of 0 means that any address will match, i.e. no filtering will be done based on source IP address.</p>
+
+<p><em>Matching</em> of the <em>name</em> and <em>type</em> fields is based on regular expressions. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example <code>.*</code> matches any expression.</p>
+
+<p>The <em>router</em> field allow to apply a rule only on a particular router's services. The field is free text so that the user can specify routers that are possibly not currently part of the system. However, the interface proposes the routers currently involved in the system as hints. The <code>*</code> character must be used to specify that no filtering based on the router is wanted.</p>
+
+<form class="well table-responsive" action="index.php?page=policy" method="POST">
   <fieldset>
   <legend>Rules</legend>
 
@@ -176,8 +199,7 @@
           <th>Source Mask</th>
           <th>Name</th>
           <th>Type</th>
-          <th>Hostname</th>
-          <th>Port</th>
+          <th>Router</th>
           <th>Action</th>
           <th colspan="3">Actions</th>
         </tr>
@@ -202,12 +224,16 @@
           for ($i = 1; $i <= $numberOfRules; $i++)
           {
             echo '<tr id="rule-'.$i.'">';
-            echo '  <td><input type="text" name="if-name-'.$i.'" value="'.$rules->item($i-1)->getAttribute("interface-name").'" required size=15 /></td>';
-            echo '  <td><input type="text" name="if-ip-'.$i.'"   value="'.$rules->item($i-1)->getAttribute("interface-ip").'"   required size=10 /></td>';
+            echo '  <td><input type="text" name="src-address-'.$i.'" value="'.$rules->item($i-1)->getAttribute("src-address").'" required ></td>';
+            echo '  <td><input type="number" value="'.$rules->item($i-1)->getAttribute("src-mask").'" name="quantity" min="0" max="128" required></td>';
             echo '  <td><input type="text" name="name-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("name").'"           required /></td>';
             echo '  <td><input type="text" name="type-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("type").'"           required /></td>';
-            echo '  <td><input type="text" name="host-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("hostname").'"       required /></td>';
-            echo '  <td><input type="text" name="port-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("port").'"           required size=10 /></td>';
+            echo '  <td><input type="text" name="router-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("router").'" list="routers"        required /></td>';
+            echo '  <datalist id="routers">';
+            foreach ($routers as $router)
+              echo '   <option value="'.$router.'">';
+            echo '     <option value="*">';
+            echo '  </datalist>';
             echo '  <td><select name="action-'.$i.'">';
             echo '        <option value="allow"'; if (strtolower(trim(DOMinnerHTML($rules->item($i-1)))) == 'allow') echo 'selected'; echo '>Allow</option>';
             echo '        <option value="deny"';  if (strtolower(trim(DOMinnerHTML($rules->item($i-1)))) == 'deny')  echo 'selected'; echo '>Deny</option>';
@@ -223,7 +249,7 @@
 
       <tfoot>
         <tr>
-          <td colspan="7"></td>
+          <td colspan="6"></td>
           <td colspan="3"><span onclick="addRule()" class="text-success glyphicon glyphicon-plus"></span></td>
         </tr>
       </tfoot>
