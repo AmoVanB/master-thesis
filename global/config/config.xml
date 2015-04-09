@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE config SYSTEM "config.dtd">
+<config>
+  <log level="debug" />
+  <domain name="amo.vyncke.org" />
+  <rules>
+    <rule src-address="" src-mask=""  router="" name="" type=".*">allow</rule>
+  </rules>
+</config>
