@@ -107,6 +107,8 @@ class ServiceDiscovery:
     # Alias of the router added to the services names (str)
     self.alias = config.get("alias")
 
+    # List of the public interfaces on which to apply the rules.
+    self.public_ifc = config.get("public-interfaces")
 
     # Getting database parameters.
     db = xml.find("./database")
@@ -273,8 +275,7 @@ class ServiceDiscovery:
     self.clear()
 
     # Announce the router to the global application
-    self.dns.addRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
-    self.dns.addRecord(self.name, "TXT", "public=wlp4s0,p5p1", subdomain = False)
+    self.dns.addRecord(self.name, "TXT", "public=%s" % self.public_ifc, subdomain = False)
     self.dns.addRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
 
     self.browse()
@@ -305,7 +306,6 @@ class ServiceDiscovery:
 
     # Clear DNS.
     ans = self.dns.clearDNSServices()
-    self.dns.removeRecord("_routers._dns-sd._udp", "PTR", self.name, subdomain = False)
     self.dns.removeRecord(self.name, "TXT", subdomain = False)
     self.dns.removeRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
 
