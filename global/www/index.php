@@ -31,7 +31,9 @@
         <?php
           // Advertise user if daemon is not running.
           if (!file_exists("/var/run/policy-manager/pid"))
+          {
             echo '<p>Note: policy manager daemon is not running.</p>';
+          }
           else
           {
             // Advertise user if config file has been changed.
@@ -71,6 +73,12 @@
             <a href="index.php?page=policy">Policy</a>
           </li>
           <li role="presentation"<?php 
+                if (isset($_GET['page']) && $_GET['page'] == 'basic-configuration')
+                  echo ' class="active"';
+              ?>>
+            <a href="index.php?page=basic-configuration">Basic Configuration</a>
+          </li>
+          <li role="presentation"<?php 
                 if (isset($_GET['page']) && $_GET['page'] == 'logs')
                   echo ' class="active"';
               ?>>
@@ -94,6 +102,7 @@
             case 'status':
             case 'logs':
             case 'welcome':
+            case 'basic-configuration':
               include $_GET['page'].'.php';
             break;
 

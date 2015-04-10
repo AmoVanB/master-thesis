@@ -225,7 +225,7 @@
           {
             echo '<tr id="rule-'.$i.'">';
             echo '  <td><input type="text" name="src-address-'.$i.'" value="'.$rules->item($i-1)->getAttribute("src-address").'" required ></td>';
-            echo '  <td><input type="number" value="'.$rules->item($i-1)->getAttribute("src-mask").'" name="quantity" min="0" max="128" required></td>';
+            echo '  <td><input type="number" value="'.$rules->item($i-1)->getAttribute("src-mask").'" name="src-mask-'.$i.'" min="0" max="128" required></td>';
             echo '  <td><input type="text" name="name-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("name").'"           required /></td>';
             echo '  <td><input type="text" name="type-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("type").'"           required /></td>';
             echo '  <td><input type="text" name="router-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("router").'" list="routers"        required /></td>';
