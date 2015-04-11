@@ -13,14 +13,16 @@ chown pm-gui    /etc/policy-manager/config.dtd
 chown pm-gui    /etc/policy-manager/config.xml
 chown pm-daemon /var/log/service-discovery.log
 
-chgrp sd        /etc/policy-manager/
-chgrp sd        /etc/policy-manager/config.dtd
-chgrp sd        /etc/policy-manager/config.xml
-chgrp sd        /var/log/policy-manager.log
+chgrp pm        /etc/policy-manager/
+chgrp pm        /etc/policy-manager/config.dtd
+chgrp pm        /etc/policy-manager/config.xml
+chgrp pm        /var/log/policy-manager.log
 
-# Group can read, user write and others: nothing.
-chmod 640 /etc/policy-manager/config.xml
+# Group can read and write, user read write and others: only access.
+chmod -R 775 /etc/policy-manager/
+# Group can read, user write and read, and others: nothing.
+chmod 640    /etc/policy-manager/config.xml
 # DTD can't be edited by anybody.
-chmod 444 /etc/policy-manager/config.dtd
+chmod 444    /etc/policy-manager/config.dtd
 # Everybody may read the logs but only user/group may write.
-chmod 664 /var/log/policy-manager.log
+chmod 664    /var/log/policy-manager.log
