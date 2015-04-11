@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
 <!DOCTYPE config SYSTEM "config.dtd">
 <config>
-  <log level="debug" />
-  <domain name="amo.vyncke.org" />
+  <log level="debug"/>
+  <domain name="amo.vyncke.org"/>
   <rules>
-    <rule src-address="" src-mask=""  router="" name="" type=".*">allow</rule>
+    <rule src-address="4.4.4.4" src-mask="12" name="amo" type="vbt" router="kot">allow</rule>
+    <rule src-address="8.8.8.8" src-mask="22" name="ju" type="amo" router="brussels">allow</rule>
+    <rule src-address="0.0.0.0" src-mask="0" name=".*" type=".*" router="*">deny</rule>
   </rules>
 </config>
