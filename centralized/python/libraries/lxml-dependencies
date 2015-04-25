@@ -1,2 +1,0 @@
-sudo yum install python-devel.x86_64 libxml2-devel.x86_64 libxslt-devel.x86_64 
-
