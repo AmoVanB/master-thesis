@@ -1,0 +1,108 @@
+/* General. */
+body
+{
+  background-color:#fafafa;
+  font-size:small;
+}
+
+nav a,
+nav a:visited,
+nav a:active,
+nav a:focus,
+nav a:hover
+{
+  color:#999;
+}
+
+section a,
+section a:visited,
+section a:active,
+section a:focus,
+section a:hover
+{
+  color:#d12239;
+}
+
+header
+{
+  text-align:center;
+  border-bottom:2px solid black;
+  background-color:#eeeeee;
+  margin-bottom:10px;
+}
+
+header p
+{
+  color:#d12239;
+}
+
+section
+{
+  margin-top:20px;
+}
+
+footer
+{
+  padding:10px;
+  color:#aaa;
+  text-align:center;
+  border-top:1px solid #aaa;
+  margin-top:10px;
+}
+
+.file-content
+{
+  background-color:#eee;
+  padding:10px;
+  border-radius:10px;
+}
+
+.stats-box
+{
+  border: 1px solid  #333;
+  border-left-width: 5px;
+  margin-bottom: 15px;
+  border-radius: 3px;
+}
+
+/* Tables. */
+table.table > thead > tr > th,
+table.table > tbody > tr > td
+{
+  vertical-align:middle;
+  text-align:center;
+}
+
+/* Forms. */
+section form.well
+{
+  text-align:center;
+  
+}
+
+section form.well fieldset legend
+{
+  color:#d12239;
+}
+
+section form.well fieldset
+{
+  padding-bottom:20px;
+}
+
+section form.well input
+{
+  text-align:center;
+  margin-bottom:5px;
+}
+
+section form.well td input
+{
+  margin-bottom:0px;
+}
+
+section form.well label
+{
+  font-variant:small-caps;
+  font-weight:normal;
+}

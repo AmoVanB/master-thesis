@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE config SYSTEM "config.dtd">
+<config name="home" alias="" public-interfaces="wlp4s0">
+  <log level="info" />
+  <database user="amo" password="cisco123"            
+            name="service_discovery" host="localhost" 
+            socket="/opt/lampp/var/mysql/mysql.sock"  
+            port="3306"/> 
+  <domain server="ks.vyncke.org"              
+          zone="amo.vyncke.org"               
+          keyname="amoupdate."                
+          keyvalue="BK1wQkLhDySTEMhLDeDSdg==" 
+          algorithm="HMAC_MD5"                
+          ttl="5" />
+  <ip version="4" alias=" IPv4)" />
+  <ip version="6" alias=" IPv6)" />
+  <interface name="wlp4s0" alias="(Wifi" />
+  <interface name="p5p1" alias="(Ethernet" />
+  <rules>
+    <service name=".*" type="_ipp\._tcp" interface-name=".*"  
+             interface-ip=".*" hostname=".*" port=".*">
+      allow
+    </service>
+    <service name=".*" type=".*" interface-name=".*"  
+             interface-ip=".*" hostname=".*" port=".*">
+      deny
+    </service>
+  </rules>
+</config>

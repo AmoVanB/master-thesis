@@ -1,0 +1,12 @@
+<!ELEMENT config (log,domain,rules?)>
+<!ELEMENT log EMPTY>
+  <!ATTLIST log level CDATA #REQUIRED>
+<!ELEMENT domain EMPTY>
+  <!ATTLIST domain name CDATA #REQUIRED>
+<!ELEMENT rules (rule+)>
+<!ELEMENT rule (#PCDATA)>
+  <!ATTLIST rule src-address CDATA #REQUIRED>
+  <!ATTLIST rule src-mask    CDATA #REQUIRED>
+  <!ATTLIST rule router      CDATA #REQUIRED>
+  <!ATTLIST rule name        CDATA #REQUIRED>
+  <!ATTLIST rule type        CDATA #REQUIRED>
