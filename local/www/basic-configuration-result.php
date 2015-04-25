@@ -1,5 +1,6 @@
 <?php
   /* Performing "security" checks. */
+  $pub_ifcs = htmlspecialchars($_POST['pub_ifcs']);
   $dbname   = htmlspecialchars($_POST['dbname']);
   $dbuser   = htmlspecialchars($_POST['dbuser']);
   $dbpwd    = htmlspecialchars($_POST['dbpwd']);
@@ -44,10 +45,12 @@
     $log    = $dom->getElementsByTagName('log')->item(0);
     $db     = $dom->getElementsByTagName('database')->item(0);
     $domain = $dom->getElementsByTagName('domain')->item(0);
+    $cfg    = $dom->getElementsByTagName('config')->item(0);
 
-    if ($db == null || $log == null || $domain == null)
+    if ($cfg == null || $db == null || $log == null || $domain == null)
       throw new DOMException('Invalid configuration file.');
     
+    $cfg->setAttribute('public-interfaces', $pub_ifcs);
     $log->setAttribute('level', $loglevel);
     $db->setAttribute('name', $dbname);
     $db->setAttribute('password', $dbpwd);

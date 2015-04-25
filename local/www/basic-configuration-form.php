@@ -6,11 +6,13 @@
     $dom->load('/etc/service-discovery/config.xml');
     $log    = $dom->getElementsByTagName('log')->item(0);
     $db     = $dom->getElementsByTagName('database')->item(0);
+    $cfg    = $dom->getElementsByTagName('config')->item(0);
     $domain = $dom->getElementsByTagName('domain')->item(0);
 
-    if ($db == null || $log == null || $domain == null)
+    if ($db == null || $cfg == null || $log == null || $domain == null)
       throw new DOMException('Invalid configuration file.');
     
+    $pub_ifcs = $cfg->getAttribute('public-interfaces');
     $loglevel = $log->getAttribute('level');
     $dbname   = $db->getAttribute('name');
     $dbpwd    = $db->getAttribute('password');
@@ -31,7 +33,16 @@
   }
 ?>
 
+<p>The router name must consist only of lower-case letters and numbers. <br />
+The public interfaces must be separated by commas if several have to be provided.</p>
+
 <form class="well" action="index.php?page=basic-configuration" method="POST">
+  <fieldset>
+  <legend>General</legend>
+    <label for="pub_ifcs">Router Public Interface(s)</label><br />
+    <input type="text"     id="pub_ifcs"   name="pub_ifcs"   value="<?php echo $pub_ifcs; ?>"   size="30" required /><br />
+  </fieldset>
+
   <fieldset>
   <legend>Database</legend>
 

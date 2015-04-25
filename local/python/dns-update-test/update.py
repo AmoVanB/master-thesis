@@ -9,18 +9,18 @@ import dns.tsigkeyring
 # version: http://www.dnspython.org/kits/1.12.0/
 
 try:
-answers_IPv6 = dns.resolver.query('ks.vyncke.org', 'AAAA')
-nsserver_address = None 
+  answers_IPv6 = dns.resolver.query('ks.vyncke.org', 'AAAA')
+  nsserver_address = None 
 
-for rdata in answers_IPv6:
-  nsserver_address = rdata.address
-  break
-
-if (nsserver_address == None):
-  answers_IPv4 = dns.resolver.query('ks.vyncke.org', 'A')
-  for rdata in answers_IPv4:
+  for rdata in answers_IPv6:
     nsserver_address = rdata.address
     break
+
+  if (nsserver_address == None):
+    answers_IPv4 = dns.resolver.query('ks.vyncke.org', 'A')
+    for rdata in answers_IPv4:
+      nsserver_address = rdata.address
+      break
 except dns.resolver.NXDOMAIN as e:
   print("The query name does not exist.")
   sys.exit(0)
@@ -51,75 +51,63 @@ update = dns.update.Update("amo.vyncke.org", keyring=key, keyalgorithm=dns.tsig.
 #       PTR: link
 #       SRV: priority, weight, port, hostname
 #       TXT  string of values separated by spaces
-update.add('b._dns-sd._udp',                 5, 'PTR',  'amo.vyncke.org.')
-update.add('db._dns-sd._udp',                5, 'PTR',  'amo.vyncke.org.')
-update.add('_services._dns-sd._udp',         5, 'PTR', '_http._tcp')
-update.add('_http._tcp',                     5, 'PTR', 'WebServer._http._tcp')
-update.add('WebServer._http._tcp', 5, 'SRV', '0 0 80 amo-laptop')
-update.add('WebServer._http._tcp', 5, 'TXT', 'path=/thesis')
-update.add('amo-laptop',                     5, 'AAAA', '2001:6a8:2d80:2460::babe')
-update.add('amo-laptop',                     5, 'A', '10.12.11.9')
+
+update.delete('b._dns-sd._udp',                    'PTR',  'brussels.amo.vyncke.org.')
+update.delete('brussels.amo.vyncke.org.',          'TXT')
+update.delete('_services._dns-sd._udp.brussels',   'PTR', '_ipp._tcp.brussels')
+update.delete('_ipp._tcp.brussels',                'PTR', 'Meeting\ Room\ Printer\ @\ Brussels\ [Sales:v6]._ipp._tcp.brussels')
+update.delete('_ipp._tcp.brussels',                'PTR', 'Reception\ Desk\ Printer\ @\ Brussels\ [IT:v6]._ipp._tcp.brussels')
+update.delete('_ipp._tcp.brussels',                'PTR', 'Meeting\ Room\ Printer\ @\ Brussels\ [IT:v6]._ipp._tcp.brussels')
+update.delete('Meeting Room Printer @ Brussels [Sales:v6]._ipp._tcp.brussels',  'SRV', '0 0 631 printer3-eth1-v6.brussels')
+update.delete('Meeting Room Printer @ Brussels [Sales:v6]._ipp._tcp.brussels',  'TXT', '""')
+update.delete('Reception Desk Printer @ Brussels [IT:v6]._ipp._tcp.brussels',   'SRV', '0 0 631 printer1-eth2-v6.brussels')
+update.delete('Reception Desk Printer @ Brussels [IT:v6]._ipp._tcp.brussels',   'TXT', '""')
+update.delete('Meeting Room Printer @ Brussels [IT:v6]._ipp._tcp.brussels',  'SRV', '0 0 631 printer2-eth2-v6.brussels')
+update.delete('Meeting Room Printer @ Brussels [IT:v6]._ipp._tcp.brussels',  'TXT', '""')
+update.delete('printer3-eth1-v6.brussels',         'AAAA', '2015:6a8:2d61:2460::babe')
+update.delete('printer1-eth2-v6.brussels',         'AAAA', '2015:6a8:2d63:2460::cafe')
+update.delete('printer2-eth2-v6.brussels',         'AAAA', '2015:6a8:2d61:2460::face')
+
+update.add('b._dns-sd._udp',                   5, 'PTR',  'brussels.amo.vyncke.org.')
+update.add('brussels.amo.vyncke.org.',         5, 'TXT', "public=eth0,eth1")
+update.add('_services._dns-sd._udp.brussels',  5, 'PTR', '_ipp._tcp.brussels')
+update.add('_ipp._tcp.brussels',               5, 'PTR', 'Meeting\ Room\ Printer\ @\ Brussels\ [Sales:v6]._ipp._tcp.brussels')
+update.add('_ipp._tcp.brussels',               5, 'PTR', 'Reception\ Desk\ Printer\ @\ Brussels\ [IT:v6]._ipp._tcp.brussels')
+update.add('_ipp._tcp.brussels',               5, 'PTR', 'Meeting\ Room\ Printer\ @\ Brussels\ [IT:v6]._ipp._tcp.brussels')
+update.add('Meeting Room Printer @ Brussels [Sales:v6]._ipp._tcp.brussels', 5, 'SRV', '0 0 631 printer3-eth1-v6.brussels')
+update.add('Meeting Room Printer @ Brussels [Sales:v6]._ipp._tcp.brussels', 5, 'TXT', '""')
+update.add('Reception Desk Printer @ Brussels [IT:v6]._ipp._tcp.brussels',  5, 'SRV', '0 0 631 printer1-eth2-v6.brussels')
+update.add('Reception Desk Printer @ Brussels [IT:v6]._ipp._tcp.brussels',  5, 'TXT', '""')
+update.add('Meeting Room Printer @ Brussels [IT:v6]._ipp._tcp.brussels', 5, 'SRV', '0 0 631 printer2-eth2-v6.brussels')
+update.add('Meeting Room Printer @ Brussels [IT:v6]._ipp._tcp.brussels', 5, 'TXT', '""')
+update.add('printer3-eth1-v6.brussels',        5, 'AAAA', '2015:6a8:2d61:2460::babe')
+update.add('printer1-eth2-v6.brussels',        5, 'AAAA', '2015:6a8:2d63:2460::cafe')
+update.add('printer2-eth2-v6.brussels',        5, 'AAAA', '2015:6a8:2d61:2460::face')
 
 
-update.delete('b._dns-sd._udp',         'PTR',  'amo.vyncke.org.')
-update.delete('db._dns-sd._udp',         'PTR',  'amo.vyncke.org.')
-update.delete('_services._dns-sd._udp', 'PTR', '_http._tcp')
-update.delete('_http._tcp',             'PTR', 'WebServer._http._tcp')
-update.delete('WebServer._http._tcp', 'SRV', '0 0 80 amo-laptop')
-update.delete('WebServer._http._tcp', 'TXT', 'path=/thesis')
-update.delete('amo-laptop',             'AAAA', '2001:6a8:2d80:2460::babe')
-update.delete('amo-laptop',                     'A', '10.12.11.9')
+update.delete('b._dns-sd._udp',                  'PTR',  'london.amo.vyncke.org.')
+update.delete('london.amo.vyncke.org.',          'TXT')
+update.delete('_services._dns-sd._udp.london',   'PTR', '_ipp._tcp.london')
+update.delete('_ipp._tcp.london',                'PTR', 'Meeting\ Room\ Printer\ @\ London\ [Sales:v6]._ipp._tcp.london')
+update.delete('_ipp._tcp.london',                'PTR', 'Reception\ Desk\ Printer\ @\ London\ [IT:v6]._ipp._tcp.london')
+update.delete('Meeting Room Printer @ London [Sales:v6]._ipp._tcp.london',  'SRV', '0 0 631 printer3-eth1-v6.london')
+update.delete('Meeting Room Printer @ London [Sales:v6]._ipp._tcp.london',  'TXT', '""')
+update.delete('Reception Desk Printer @ London [IT:v6]._ipp._tcp.london',  'SRV', '0 0 631 printer1-eth2-v6.london')
+update.delete('Reception Desk Printer @ London [IT:v6]._ipp._tcp.london',  'TXT', '""')
+update.delete('printer3-eth1-v6.london',         'AAAA', '2001:6a8:2631:2460::babe')
+update.delete('printer1-eth2-v6.london',         'AAAA', '2001:6a8:2d31:2460::cafe')
 
-update.delete('b._dns-sd._udp',                                 'PTR',  'kot.amo.vyncke.org.')
-update.delete('_services._dns-sd._udp.kot.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.delete('_ipp._tcp.kot.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Kot\)._ipp._tcp.kot.amo.vyncke.org.')
-update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'SRV',  '0 0 80 amo-laptop-12.kot.amo.vyncke.org.')
-update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'TXT',  'path=/thesis')
-update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
-update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'A', '1.2.3.4')
-
-update.add('b._dns-sd._udp',                                 5, 'PTR',  'kot.amo.vyncke.org.')
-update.add('_services._dns-sd._udp.kot.amo.vyncke.org.',     5, 'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.add('_ipp._tcp.kot.amo.vyncke.org.',                  5, 'PTR',  'Imprimante\ \(Kot\)._ipp._tcp.kot.amo.vyncke.org.')
-update.add('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 5, 'SRV',  '0 0 80 amo-laptop-12.kot.amo.vyncke.org.')
-update.add('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 5, 'TXT',  'path=/thesis')
-update.add('amo-laptop-12.kot.amo.vyncke.org.',              5, 'AAAA', '2001:6a8:2d80:2460::cafe')
-update.add('amo-laptop-12.kot.amo.vyncke.org.',              5, 'A', '1.2.3.4')
-
-update.delete('b._dns-sd._udp',                                 'PTR',  'kot.amo.vyncke.org.')
-update.delete('_services._dns-sd._udp.kot.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.delete('_ipp._tcp.kot.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Kot\)._ipp._tcp.kot.amo.vyncke.org.')
-update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'SRV',  '0 0 80 amo-laptop-12.kot.amo.vyncke.org.')
-update.delete('Imprimante (Kot)._ipp._tcp.kot.amo.vyncke.org.', 'TXT',  'path=/thesis')
-update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
-update.delete('amo-laptop-12.kot.amo.vyncke.org.',              'A', '1.2.3.4')
-
-update.delete('b._dns-sd._udp',                                  'PTR',  'home.amo.vyncke.org.')
-update.delete('_services._dns-sd._udp.home.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.delete('_ipp._tcp.home.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Home\)._ipp._tcp.home.amo.vyncke.org.')
-update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','SRV',  '0 0 80 amo-laptop-12.home.amo.vyncke.org.')
-update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','TXT',  'path=/thesis')
-update.delete('amo-laptop-12.home.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
-update.delete('amo-laptop-12.home.amo.vyncke.org.',              'A', '1.2.3.4')
-
-update.add('b._dns-sd._udp',                                   5, 'PTR',  'home.amo.vyncke.org.')
-update.add('_services._dns-sd._udp.home.amo.vyncke.org.',      5, 'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.add('_ipp._tcp.home.amo.vyncke.org.',                   5, 'PTR',  'Imprimante\ \(Home\)._ipp._tcp.home.amo.vyncke.org.')
-update.add('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.', 5, 'SRV',  '0 0 80 amo-laptop-12.home.amo.vyncke.org.')
-update.add('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.', 5, 'TXT',  'path=/thesis')
-update.add('amo-laptop-12.home.amo.vyncke.org.',               5, 'AAAA', '2001:6a8:2d80:2460::cafe')
-update.add('amo-laptop-12.home.amo.vyncke.org.',               5, 'A', '1.2.3.4')
-
-
-update.delete('Drucker._ipp._tcp.dell','TXT')
-
-update.delete('b._dns-sd._udp',                                  'PTR',  'home.amo.vyncke.org.')
-update.delete('_services._dns-sd._udp.home.amo.vyncke.org.',     'PTR',  '_ipp._tcp.kot.amo.vyncke.org.')
-update.delete('_ipp._tcp.home.amo.vyncke.org.',                  'PTR',  'Imprimante\ \(Home\)._ipp._tcp.home.amo.vyncke.org.')
-update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','SRV',  '0 0 80 amo-laptop-12.home.amo.vyncke.org.')
-update.delete('Imprimante (Home)._ipp._tcp.home.amo.vyncke.org.','TXT',  'path=/thesis')
-update.delete('amo-laptop-12.home.amo.vyncke.org.',              'AAAA', '2001:6a8:2d80:2460::cafe')
-update.delete('amo-laptop-12.home.amo.vyncke.org.',              'A', '1.2.3.4')
+update.add('b._dns-sd._udp',                 5, 'PTR',  'london.amo.vyncke.org.')
+update.add('london.amo.vyncke.org.',         5, 'TXT', "public=eth1")
+update.add('_services._dns-sd._udp.london',  5, 'PTR', '_ipp._tcp.london')
+update.add('_ipp._tcp.london',               5, 'PTR', 'Meeting\ Room\ Printer\ @\ London\ [Sales:v6]._ipp._tcp.london')
+update.add('_ipp._tcp.london',               5, 'PTR', 'Reception\ Desk\ Printer\ @\ London\ [IT:v6]._ipp._tcp.london')
+update.add('Meeting Room Printer @ London [Sales:v6]._ipp._tcp.london', 5, 'SRV', '0 0 631 printer3-eth1-v6.london')
+update.add('Meeting Room Printer @ London [Sales:v6]._ipp._tcp.london', 5, 'TXT', '""')
+update.add('Reception Desk Printer @ London [IT:v6]._ipp._tcp.london', 5, 'SRV', '0 0 631 printer1-eth2-v6.london')
+update.add('Reception Desk Printer @ London [IT:v6]._ipp._tcp.london', 5, 'TXT', '""')
+update.add('printer3-eth1-v6.london',        5, 'AAAA', '2001:6a8:2631:2460::babe')
+update.add('printer1-eth2-v6.london',        5, 'AAAA', '2001:6a8:2d31:2460::cafe')
 
 
 response = None

@@ -6,7 +6,7 @@ mkdir /etc/service-discovery/
 
 cp  ./config/config.dtd           /etc/service-discovery/
 cp  ./config/config.xml           /etc/service-discovery/
-cp ./config/avahi-daemon.conf    /etc/avahi/avahi-daemon.conf
+cp  ./config/avahi-daemon.conf    /etc/avahi/avahi-daemon.conf
 cp  ./config/system-local.conf    /etc/dbus-1/system-local.conf
 touch /var/log/service-discovery.log
 

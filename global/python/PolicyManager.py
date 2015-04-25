@@ -72,7 +72,17 @@ class PolicyManager:
 
         for router_fqdn in services.keys():
           router = router_fqdn.split(".")[0]
+
+          input_ifcs = wrapper.getPublicInterfaces(router)
+          if not input_ifcs or len(input_ifcs) == 0:
+            self.logger.warning("No public interface found for router %s. No rules applied." % router)
+            break
+
           iptables_file = open('/etc/policy-manager/iptables_' + router + '.sh', 'w')
+
+          # Deny by default
+          iptables_file.write("iptables  -t filter -P FORWARD DROP # Deny by default\n")
+          iptables_file.write("ip6tables -t filter -P FORWARD DROP # Deny by default\n")
 
           # Removing rules not concerning the current router.
           rules_routers_filtered = []
@@ -104,10 +114,6 @@ class PolicyManager:
     
               for match_service in match_services:
                 # Create IP table rules. One for each input interface and for each ip address.
-                input_ifcs = wrapper.getPublicInterfaces(router)
-                if not input_ifcs or len(input_ifcs) == 0:
-                  self.logger.error("No public interface found for router %s." % router)
-                  break
 
                 for ifc in input_ifcs:
                   for address in match_service['addresses']:
@@ -138,15 +144,13 @@ class PolicyManager:
 
                       iptables_file.write(string + "\n")
 
-          iptables_file.write("iptables  -t filter -A FORWARD -j DROP # Deny by default\n")
-          iptables_file.write("ip6tables -t filter -A FORWARD -j DROP # Deny by default\n")
           iptables_file.close()
 
         if services and rules:
           dns_last_change = dns_current_serial
           config_last_change = config_current_change  
 
-      time.sleep(10) # each 5 sec
+      time.sleep(30) # every 30 sec
 
   def stop(self):
     self.run = False
