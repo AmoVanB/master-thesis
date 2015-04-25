@@ -6,12 +6,14 @@
     $dom->load('/etc/policy-manager/config.xml');
     $log    = $dom->getElementsByTagName('log')->item(0);
     $domain = $dom->getElementsByTagName('domain')->item(0);
+    $update = $dom->getElementsByTagName('update')->item(0);
 
-    if ($log == null || $domain == null)
+    if ($log == null || $domain == null || $update == null)
       throw new DOMException('Invalid configuration file.');
     
     $loglevel = $log->getAttribute('level');
     $domain   = $domain->getAttribute('name');
+    $rate     = $update->getAttribute('rate');
   }
   catch (Exception $e)
   {
@@ -25,6 +27,10 @@
 
     <label for="domain">Domain</label><br />
     <input type="text"     id="domain"  name="domain"  value="<?php echo $domain; ?>"  size="30" required /><br />
+
+    <label for="rate">Update Rate (min)</label><br />
+    <input type="number" id="rate"  name="rate" value="<?php echo $rate; ?>"  size="3" min="1" required /><br />
+<input type="number" name="quantity" min="1" max="5">
 
     <label for="loglevel">Log Level</label><br /> 
     <select id="loglevel" name="loglevel">

@@ -2,6 +2,7 @@
   /* Performing "security" checks. */
   $domain   = htmlspecialchars($_POST['domain']);
   $loglevel = htmlspecialchars($_POST['loglevel']);
+  $rate     = htmlspecialchars($_POST['rate']);
 
   if (isset($_POST['backup']))
     $backup = htmlspecialchars($_POST['backup']);
@@ -30,12 +31,14 @@
     // Updating tags with new values.
     $log        = $dom->getElementsByTagName('log')->item(0);
     $domain_tag = $dom->getElementsByTagName('domain')->item(0);
+    $update     = $dom->getElementsByTagName('rate')->item(0);
 
-    if ($log == null || $domain == null)
+    if ($log == null || $domain == null || $update == null)
       throw new DOMException('Invalid configuration file.');
     
     $log->setAttribute('level', $loglevel);
     $domain_tag->setAttribute('name', $domain);
+    $update->setAttribute('rate', $rate);
 
     // Saving config file.
     if ($dom->save('/etc/policy-manager/config.xml') != FALSE)
