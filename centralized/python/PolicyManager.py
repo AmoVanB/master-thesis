@@ -41,12 +41,13 @@ class PolicyManager:
   To start the process, simply call the start() method.
   """
 
-  def __init__(self, logger, domain):
+  def __init__(self, logger, domain, rate):
     """Constructor.
     """
     self.run = False
     self.logger = logger
     self.domain = domain
+    self.rate = rate
 
   def start(self):
     """Starts the process.
@@ -150,7 +151,7 @@ class PolicyManager:
           dns_last_change = dns_current_serial
           config_last_change = config_current_change  
 
-      time.sleep(30) # every 30 sec
+      time.sleep(int(rate)) # every 30 sec
 
   def stop(self):
     self.run = False

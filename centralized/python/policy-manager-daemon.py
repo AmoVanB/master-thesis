@@ -49,7 +49,7 @@ class PolicyManagerDaemon():
   routers involved in the system.
   """
 
-  def __init__(self, logger, pidpath, domain):
+  def __init__(self, logger, pidpath, domain, rate):
     self.stdin_path = '/dev/null'
     self.stdout_path = '/dev/stdout'
     self.stderr_path = '/dev/stderr'
@@ -58,11 +58,12 @@ class PolicyManagerDaemon():
     self.pm = None       
     self.logger = logger 
     self.domain = domain  
+    self.rate   = rate
 
   def run(self):
     """Starts the daemon.
     """
-    self.pm = PolicyManager(self.logger, self.domain)
+    self.pm = PolicyManager(self.logger, self.domain, self.rate)
     self.logger.info("Policy manager daemon startup.")
     self.pm.start()
 
@@ -89,6 +90,7 @@ if __name__ == '__main__':
 
     level   = xml.find("./log").get("level")
     domain  = xml.find("./domain").get("name")
+    rate    = xml.find("./update").get("rate")
   except etree.LxmlError as e:
     logger.error("Error while parsing configuration file: %s" % e)
     logger.error("Daemon not started.")
@@ -116,7 +118,7 @@ if __name__ == '__main__':
   os.chown('/var/run/policy-manager/', uid, gid)
   os.chmod('/var/run/policy-manager/', 0755)
 
-  app = PolicyManagerDaemon(logger, "/var/run/policy-manager/pid", domain)
+  app = PolicyManagerDaemon(logger, "/var/run/policy-manager/pid", domain, rate)
   daemon_runner = runner.DaemonRunner(app)
   daemon_runner.daemon_context.files_preserve=[handler.stream]
   daemon_runner.daemon_context.uid = uid

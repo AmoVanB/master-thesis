@@ -20,13 +20,7 @@ section a:active,
 section a:focus,
 section a:hover
 {
-  color:#073191;
-}
-
-code
-{
-  color:#073191;
-  background-color:#eef2f9;
+  color:#d12239;
 }
 
 header
@@ -39,7 +33,7 @@ header
 
 header p
 {
-  color:#073191;
+  color:#d12239;
 }
 
 section
@@ -88,7 +82,7 @@ section form.well
 
 section form.well fieldset legend
 {
-  color:#073191;
+  color:#d12239;
 }
 
 section form.well fieldset

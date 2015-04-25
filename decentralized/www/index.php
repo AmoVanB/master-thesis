@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GUI for Policy Configuration</title>
+  <title>GUI for Service Discovery Configuration</title>
   <meta charset="utf-8">
   <meta name="description" content="Web GUI for Service Discovery Configuration">
   <meta name="keywords" content="ulg,montefiore,vanbemten,van,bemten,amaury,master,thesis,service,mdns,dnssd,bonjour,zeroconf,cisco,vyncke,eric,leduc,guy">
@@ -17,7 +17,7 @@
   <!-- Bootstrap -->
   <link href="style/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <!-- Custom style -->
-  <link href="style/style-blue.css" rel="stylesheet">
+  <link href="style/style.css" rel="stylesheet">
 </head>
 
 <body>
@@ -27,18 +27,16 @@
   <div class="container-fluid">
     <div class="row">
       <header class="col-xs-12">
-        <h1>Policy Configuration</h1>
+        <h1>Service Discovery Configuration</h1>
         <?php
           // Advertise user if daemon is not running.
-          if (!file_exists("/var/run/policy-manager/pid"))
-          {
-            echo '<p>Note: policy manager daemon is not running.</p>';
-          }
+          if (!file_exists("/var/run/service-discovery/pid"))
+            echo '<p>Note: service discovery daemon is not running.</p>';
           else
           {
             // Advertise user if config file has been changed.
-            if (file_exists("/etc/policy-manager/config.xml")) // Should always be true.
-              if (filemtime("/var/run/policy-manager/pid") < filemtime("/etc/policy-manager/config.xml"))
+            if (file_exists("/etc/service-discovery/config.xml")) // Should always be true.
+              if (filemtime("/var/run/service-discovery/pid") < filemtime("/etc/service-discovery/config.xml"))
                 echo '<p>Note: configuration file has been changed since daemon startup.</p>';
           }
         ?>
@@ -61,22 +59,28 @@
             <a href="index.php">Index</a>
           </li>
           <li role="presentation"<?php
-                if (isset($_GET['page']) && $_GET['page'] == 'status')
+                if (isset($_GET['page']) && $_GET['page'] == 'list')
                   echo ' class="active"';
               ?>>
-            <a href="index.php?page=status">Status</a>
-          </li>
-          <li role="presentation"<?php 
-                if (isset($_GET['page']) && $_GET['page'] == 'policy')
-                  echo ' class="active"';
-              ?>>
-            <a href="index.php?page=policy">Policy</a>
+            <a href="index.php?page=list">List of Services</a>
           </li>
           <li role="presentation"<?php 
                 if (isset($_GET['page']) && $_GET['page'] == 'basic-configuration')
                   echo ' class="active"';
               ?>>
             <a href="index.php?page=basic-configuration">Basic Configuration</a>
+          </li>
+          <li role="presentation"<?php 
+                if (isset($_GET['page']) && $_GET['page'] == 'announcement-preferences')
+                  echo ' class="active"';
+              ?>>
+            <a href="index.php?page=announcement-preferences">Announcement Preferences</a>
+          </li>
+          <li role="presentation"<?php 
+                if (isset($_GET['page']) && $_GET['page'] == 'renaming-preferences')
+                  echo ' class="active"';
+              ?>>
+            <a href="index.php?page=renaming-preferences">Renaming Preferences</a>
           </li>
           <li role="presentation"<?php 
                 if (isset($_GET['page']) && $_GET['page'] == 'logs')
@@ -98,11 +102,31 @@
         {
           switch ($_GET['page'])
           {
-            case 'policy':
-            case 'status':
+            /* Pages which require to connect to MySQL. */
+            case 'list':
+              require('connect.php');
+              if ($connected)
+              {
+                include $_GET['page'].'.php';
+                $db = null; // Closing connection
+              }
+              else
+              {
+                echo '<h3>Error</h3>' . 
+                     '<p>Impossible to connect to the services database. '   .
+                     'Check <code>/etc/service-discovery/config.xml</code> ' .
+                     'and the database configuration.<br />'                 .
+                     '<a href="index.php">Back to home</a>.</p>';
+              }
+
+            break;
+
+            /* Pages which do not require to connect to MySQL. */
+            case 'basic-configuration':
+            case 'announcement-preferences':
+            case 'renaming-preferences':
             case 'logs':
             case 'welcome':
-            case 'basic-configuration':
               include $_GET['page'].'.php';
             break;
 

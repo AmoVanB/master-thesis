@@ -15,7 +15,7 @@
 
 <?php
 
-  $file = '/var/log/policy-manager.log';
+  $file = '/var/log/service-discovery.log';
   $nlines = escapeshellarg($nlines);
   $file = escapeshellarg($file);
   $file = `tail -n $nlines $file`;
