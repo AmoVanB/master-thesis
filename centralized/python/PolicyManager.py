@@ -61,6 +61,7 @@ class PolicyManager:
     dns_last_change    = 0              # Initial serial: zero.
 
     while(self.run):
+      print("iteration")
       # Retrieving SOA and modification time
       dns_current_serial = wrapper.getSerial()
       config_current_change = os.path.getmtime('/etc/policy-manager/config.xml')
@@ -151,7 +152,7 @@ class PolicyManager:
           dns_last_change = dns_current_serial
           config_last_change = config_current_change  
 
-      time.sleep(int(rate)) # every 30 sec
+      time.sleep(int(self.rate)) # every 30 sec
 
   def stop(self):
     self.run = False
