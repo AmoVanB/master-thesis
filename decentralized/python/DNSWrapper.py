@@ -22,10 +22,55 @@ import dns.name
 import socket          # To catch socket errors.
 import Miscellaneous
 
+TIMEOUT = 10
+
 LABEL_NAME_ERROR  = 11
 NS_UNRESOLVED     = 12
 NS_QUERYING_ERROR = 13
 SOCKET_ERROR      = 14
+
+def sendUpdate(ipv6_address, ipv4_address, update):
+  """Send a DNS Update query to a name server. If the IPv6 address fails or 
+     does not exist, we try the IPv4 one.
+  
+  Args:
+    ipv6_address: IPv6 address of the name server to contact. None if no 
+                  one exist/is found.
+    ipv4_address: IPv4 address of the name server to contact. None if no 
+                  one exist/is found.
+    update:       dns.Update to send to the server.
+  """
+
+  response = None
+
+  try:
+    # Use IPv6 if possible. If no IPv6 address or IPv6 unsuccessful, we try
+    # IPv4.
+    if (ipv6_address == None):
+      raise dns.exception.DNSException # Raise this to notify v6 failure.
+    response = dns.query.tcp(update, ipv6_address, timeout=TIMEOUT)
+
+  except (dns.tsig.PeerBadKey,
+          dns.tsig.PeerBadSignature,
+          dns.exception.DNSException,
+          socket.error, # may occur if the host does not support IPv[46] and we
+                        # try to connect to IPv[46] address of the name server.
+          dns.exception.Timeout) as e: 
+    # Here: IPv6 was unsuccessful, let's try IPv4.
+    try:
+      if (ipv4_address == None):
+        raise dns.exception.DNSException # Raise this to notify v4 failure.
+      response = dns.query.tcp(update, ipv4_address, timeout=TIMEOUT)
+    except (dns.tsig.PeerBadKey,
+            dns.tsig.PeerBadSignature,
+            dns.exception.DNSException,
+            dns.exception.Timeout) as e: 
+      return NS_QUERYING_ERROR
+    except (socket.error):
+      return SOCKET_ERROR
+
+  return response.rcode()
+
 
 class DNSWrapper:
   """A wrapper around the python-dns library to allow to easily perform
@@ -107,7 +152,7 @@ class DNSWrapper:
     self.errors[LABEL_NAME_ERROR]  = 'Label or name too long or empty.'
     self.errors[NS_UNRESOLVED]     = 'Nameserver unresolved.'
     self.errors[NS_QUERYING_ERROR] = 'Error querying nameserver. ' +\
-                                     'Probably do to the key.' 
+                                     'Probably do to the key or a timeout.' 
     self.errors[SOCKET_ERROR]      = 'Socket error.'
 
 
@@ -189,35 +234,7 @@ class DNSWrapper:
     else:
       update.delete(name_domain, rtype, rdata)
 
-    response = None
-
-    try:
-      # Use IPv6 if possible. If no IPv6 address, use IPv4.
-      if (server_addresses[0] != None):
-        response = dns.query.tcp(update, server_addresses[0])
-      else:
-        response = dns.query.tcp(update, server_addresses[1])
-    except (dns.tsig.PeerBadKey,
-            dns.tsig.PeerBadSignature,
-            dns.exception.DNSException) as e: 
-      return NS_QUERYING_ERROR
-    except (socket.error):
-      # Socket error may occur if the host does not support IPv[46] and we try
-      # to connect to IPv[46] address of the name server. We thus try the other
-      # IP version address. This can be done by first trying IPv4.
-      try:
-        if (server_addresses[1] != None):
-          response = dns.query.tcp(update, server_addresses[1])
-        else:
-          response = dns.query.tcp(update, server_addresses[0])
-      except (dns.tsig.PeerBadKey,
-              dns.tsig.PeerBadSignature,
-              dns.exception.DNSException) as e: 
-        return NS_QUERYING_ERROR
-      except (socket.error):
-        return SOCKET_ERROR
-
-    return response.rcode()
+    return sendUpdate(server_addresses[0], server_addresses[1], update)
 
 
   def addRecord(self, name, rtype, rdata, subdomain = True):
@@ -253,35 +270,7 @@ class DNSWrapper:
     name_domain = Miscellaneous.escape(("%r" % (name + domain))[1:-1])
     update.add(name_domain, self.ttl, rtype, rdata)
 
-    response = None
-
-    try:
-      # Use IPv6 if possible. If no IPv6 address, use IPv4.
-      if (server_addresses[0] != None):
-        response = dns.query.tcp(update, server_addresses[0])
-      else:
-        response = dns.query.tcp(update, server_addresses[1])
-    except (dns.tsig.PeerBadKey,
-            dns.tsig.PeerBadSignature,
-            dns.exception.DNSException) as e: 
-      return NS_QUERYING_ERROR
-    except (socket.error):
-      # Socket error may occur if the host does not support IPv[46] and we try
-      # to connect to IPv[46] address of the name server. We thus try the other
-      # IP version address. This can be done by first trying IPv4.
-      try:
-        if (server_addresses[1] != None):
-          response = dns.query.tcp(update, server_addresses[1])
-        else:
-          response = dns.query.tcp(update, server_addresses[0])
-      except (dns.tsig.PeerBadKey,
-              dns.tsig.PeerBadSignature,
-              dns.exception.DNSException) as e: 
-        return NS_QUERYING_ERROR
-      except (socket.error):
-        return SOCKET_ERROR
-
-    return response.rcode()
+    return sendUpdate(server_addresses[0], server_addresses[1], update)
 
 
   def addService(self, name, stype, host, addresses, port, txt, subdomain = True):
@@ -348,35 +337,7 @@ class DNSWrapper:
     except (dns.name.LabelTooLong,dns.name.NameTooLong,dns.name.EmptyLabel) as e:
       return LABEL_NAME_ERROR
       
-    response = None
-
-    try:
-      # Use IPv6 if possible. If no IPv6 address, use IPv4.
-      if (server_addresses[0] != None):
-        response = dns.query.tcp(update, server_addresses[0])
-      else:
-        response = dns.query.tcp(update, server_addresses[1])
-    except (dns.tsig.PeerBadKey,
-            dns.tsig.PeerBadSignature,
-            dns.exception.DNSException) as e: 
-      return NS_QUERYING_ERROR
-    except (socket.error):
-      # Socket error may occur if the host does not support IPv[46] and we try
-      # to connect to IPv[46] address of the name server. We thus try the other
-      # IP version address. This can be done by first trying IPv4.
-      try:
-        if (server_addresses[1] != None):
-          response = dns.query.tcp(update, server_addresses[1])
-        else:
-          response = dns.query.tcp(update, server_addresses[0])
-      except (dns.tsig.PeerBadKey,
-              dns.tsig.PeerBadSignature,
-              dns.exception.DNSException) as e: 
-        return NS_QUERYING_ERROR
-      except (socket.error):
-        return SOCKET_ERROR
-
-    return response.rcode()
+    return sendUpdate(server_addresses[0], server_addresses[1], update)
 
 
   def removeService(self, name, stype, host, delete_stype, delete_host, subdomain = True):
@@ -430,33 +391,7 @@ class DNSWrapper:
 
     response = None
 
-    try:
-      # Use IPv6 if possible. If no IPv6 address, use IPv4.
-      if (server_addresses[0] != None):
-        response = dns.query.tcp(update, server_addresses[0])
-      else:
-        response = dns.query.tcp(update, server_addresses[1])
-    except (dns.tsig.PeerBadKey,
-            dns.tsig.PeerBadSignature,
-            dns.exception.DNSException) as e: 
-      return NS_QUERYING_ERROR
-    except (socket.error):
-      # Socket error may occur if the host does not support IPv[46] and we try
-      # to connect to IPv[46] address of the name server. We thus try the other
-      # IP version address. This can be done by first trying IPv4.
-      try:
-        if (server_addresses[1] != None):
-          response = dns.query.tcp(update, server_addresses[1])
-        else:
-          response = dns.query.tcp(update, server_addresses[0])
-      except (dns.tsig.PeerBadKey,
-              dns.tsig.PeerBadSignature,
-              dns.exception.DNSException) as e: 
-        return NS_QUERYING_ERROR
-      except (socket.error):
-        return SOCKET_ERROR
-
-    return response.rcode()
+    return sendUpdate(server_addresses[0], server_addresses[1], update)
 
 
   def clearDNSServices(self, subdomain = True):
@@ -562,32 +497,4 @@ class DNSWrapper:
     # 8.
     update.delete('b._dns-sd._udp', 'PTR', domain[1:] + "." + self.zone + ".")
 
-    response = None
-
-    try:
-      # Use IPv6 if possible. If no IPv6 address, use IPv4.
-      if (server_addresses[0] != None):
-        response = dns.query.tcp(update, server_addresses[0])
-      else:
-        response = dns.query.tcp(update, server_addresses[1])
-    except (dns.tsig.PeerBadKey,
-            dns.tsig.PeerBadSignature,
-            dns.exception.DNSException) as e: 
-      return NS_QUERYING_ERROR
-    except (socket.error):
-      # Socket error may occur if the host does not support IPv[46] and we try
-      # to connect to IPv[46] address of the name server. We thus try the other
-      # IP version address. This can be done by first trying IPv4.
-      try:
-        if (server_addresses[1] != None):
-          response = dns.query.tcp(update, server_addresses[1])
-        else:
-          response = dns.query.tcp(update, server_addresses[0])
-      except (dns.tsig.PeerBadKey,
-              dns.tsig.PeerBadSignature,
-              dns.exception.DNSException) as e: 
-        return NS_QUERYING_ERROR
-      except (socket.error):
-        return SOCKET_ERROR
-
-    return response.rcode()
+    return sendUpdate(server_addresses[0], server_addresses[1], update)
