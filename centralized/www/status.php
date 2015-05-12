@@ -6,6 +6,11 @@
 
 <?php
 
+
+function convertOctalToCharacter($octal) {
+    return chr(octdec($octal[1]));
+}
+
 $domain = 'amo.vyncke.org.';
 
 $routers_results = dns_get_record( 'b._dns-sd._udp.'.$domain, DNS_PTR);
@@ -73,7 +78,15 @@ else
             $addresses = substr($addresses, 0, -2);          
 
             echo '<tr>';
-            echo '<td>'.stripcslashes(str_replace('\032', ' ', substr(utf8_decode($service_entry['target']), 0, - 1 - strlen($type_entry['target'])))).'</td>';
+            // Manual conversion as no automatic function found.
+            // Full table: http://www.utf8-chartable.de/unicode-utf8-table.pl
+            $service_entry['target'] = str_replace('\032', ' ', $service_entry['target']);
+            $service_entry['target'] = str_replace('\195\169', 'é', $service_entry['target']);
+            $service_entry['target'] = str_replace('\195\168', 'è', $service_entry['target']);
+            $service_entry['target'] = str_replace('\194\171', '«', $service_entry['target']);
+            $service_entry['target'] = str_replace('\194\187', '»', $service_entry['target']);
+            $service_entry['target'] = str_replace('\194\160', ' ', $service_entry['target']);
+            echo '<td>'.substr(stripslashes($service_entry["target"]), 0, - 1 - strlen($type_entry['target'])).'</td>';
             echo '<td>'.substr($hostname, 0, - 1 - strlen($router_entry['target'])).'</td>';
             echo '<td>'.$port.'</td>';
             echo '<td>'.$addresses.'</td>';

@@ -22,7 +22,7 @@ import dns.name
 import socket          # To catch socket errors.
 import Miscellaneous
 
-TIMEOUT = 10
+TIMEOUT = 5
 
 LABEL_NAME_ERROR  = 11
 NS_UNRESOLVED     = 12
@@ -228,7 +228,7 @@ class DNSWrapper:
                                keyring      = key,
                                keyalgorithm = self.algorithm)
 
-    name_domain = Miscellaneous.escape(("%r" % (name + domain))[1:-1])
+    name_domain = Miscellaneous.escape(name + domain)
     if (rdata == None):
       update.delete(name_domain, rtype)
     else:
@@ -267,7 +267,7 @@ class DNSWrapper:
                                keyring      = key,
                                keyalgorithm = self.algorithm)
 
-    name_domain = Miscellaneous.escape(("%r" % (name + domain))[1:-1])
+    name_domain = Miscellaneous.escape(name + domain)
     update.add(name_domain, self.ttl, rtype, rdata)
 
     return sendUpdate(server_addresses[0], server_addresses[1], update)
@@ -320,8 +320,7 @@ class DNSWrapper:
 
     try:
       # Get escaped representation of the name and remove surrounding quotes.
-      name = Miscellaneous.escape(("%r" % name)[1:-1])
-      host = Miscellaneous.escape(("%r" % host)[1:-1])
+      name = Miscellaneous.escape(name)
       name_type = name + ".%s" % stype
       update.add('_services._dns-sd._udp' + domain, self.ttl, 'PTR', stype + domain)
       update.add(stype     + domain, self.ttl, 'PTR', name_type + domain)
@@ -375,8 +374,7 @@ class DNSWrapper:
                                keyalgorithm = self.algorithm)
 
     # Get escaped representation of the name and remove surrounding quotes.
-    name = Miscellaneous.escape(("%r" % name)[1:-1])
-    host = Miscellaneous.escape(("%r" % host)[1:-1])
+    name = Miscellaneous.escape(name)
     name_type = name + ".%s" % stype
     update.delete(stype     + domain, 'PTR', name_type + domain)
     update.delete(name_type + domain, 'SRV')

@@ -255,7 +255,7 @@
   <strong class="text-danger">red</strong> services are unresolved and<br />
 <strong class="text-warning">orange</strong> services are resolved except their IP address.<br />
 </p>
-<p>Note that only global addresses are considered. A service with no global address will never be able to get fully resolved.</p>
+<p>Note that only global addresses are considered. A service with no global address announced will never be able to get fully resolved.</p>
 
 <!-- Displaying sorting value and order. -->
 <p>

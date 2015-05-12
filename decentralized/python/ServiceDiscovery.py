@@ -239,7 +239,6 @@ class ServiceDiscovery:
     # The DBus Interface to the browser for service types.
     self.service_type_browser = None
 
-
     # Setting up the event loop.
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
@@ -296,8 +295,7 @@ class ServiceDiscovery:
     """
 
     # Clear DB.
-    ans = self.db.command(["DELETE FROM services;",
-                           "DELETE FROM addresses;"])
+    ans = self.db.command([("DELETE FROM services;", None), ("DELETE FROM addresses;", None)])
     if (ans != 0):
       self.logger.error("Impossible to clear database correctly " +
                         "(MySQL error: %i).", ans)
@@ -452,10 +450,7 @@ class ServiceDiscovery:
     if_ip     = self.ip_version(protocol)
 
     # We encode our unicode in a UTF8 string.
-    ans = self.db.command(["INSERT INTO services " +
-                           "VALUES (%r, '%i', %r, %r, " %
-                                   (if_name, if_ip, name, stype) +
-                           "NULL, NULL, NULL, FALSE, FALSE);"])
+    ans = self.db.command([("INSERT INTO services VALUES (%s, %s, %s, %s, NULL, NULL, NULL, FALSE, FALSE);", (if_name, if_ip, name, stype))])
     if (ans == 1062):
       # Duplicate entry. Should not occur, but it's not a problem.
       self.logger.warning("Duplicate service %s.%s on %s. Ignored." %
@@ -518,11 +513,7 @@ class ServiceDiscovery:
     if_ip     = self.ip_version(protocol)
     
     # Getting the service's hostname and announced status before removal.
-    response = self.db.query("SELECT hostname, announced FROM services " +
-                             "WHERE name   = %r "  % name    +
-                               "AND type   = %r "  % stype   +
-                               "AND if_name= %r "  % if_name +
-                               "AND if_ip  ='%i';" % if_ip)
+    response = self.db.query(("SELECT hostname, announced FROM services WHERE name = %s AND type = %s AND if_name = %s AND if_ip = %s;", (name, stype, if_name, if_ip)))
     if (response == None or len(response) == 0):
       self.stop(error = "Database failed 1.")
       return
@@ -537,11 +528,7 @@ class ServiceDiscovery:
     announced = response[0]['announced']
 
     # Removal.    
-    ans = self.db.command(["DELETE FROM services "         +
-                           "WHERE name   = %r  " % name    +
-                           "AND   type   = %r  " % stype   +
-                           "AND   if_name= %r  " % if_name +
-                           "AND   if_ip  ='%i';" % if_ip])
+    ans = self.db.command([("DELETE FROM services WHERE name = %s AND type = %s AND if_name = %s AND if_ip = %s;", (name, stype, if_name, if_ip))])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
@@ -557,18 +544,9 @@ class ServiceDiscovery:
     # Note that if the service was not resolved, hostname can be None.
     # However, since we converted it into "" this does not lead to any
     # incoherence in the following instructions.
-    nb_type_announced_ans = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE type= %r " % stype         +
-                                          "AND   announced='1';")
-    nb_host_announced_ans = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE hostname= %r "  % hostname +
-                                          "AND   if_name = %r "  % if_name  +
-                                          "AND   if_ip   ='%i' " % if_ip    +
-                                          "AND   announced='1';")
-    nb_host_ans           = self.db.query("SELECT COUNT(*) FROM services "  +
-                                          "WHERE hostname= %r  " % hostname +
-                                          "AND   if_name = %r  " % if_name  +
-                                          "AND   if_ip   ='%i';" % if_ip)
+    nb_type_announced_ans = self.db.query(("SELECT COUNT(*) FROM services WHERE type= %s AND announced='1';", (stype,)))
+    nb_host_announced_ans = self.db.query(("SELECT COUNT(*) FROM services WHERE hostname= %s AND if_name = %s AND if_ip = %s AND announced='1';", (hostname, if_name, if_ip)))
+    nb_host_ans           = self.db.query(("SELECT COUNT(*) FROM services WHERE hostname= %s AND if_name = %s AND if_ip = %s;", (hostname, if_name, if_ip)))
     if (nb_type_announced_ans == None   or 
         nb_host_announced_ans == None   or
         nb_host_ans == None             or 
@@ -609,10 +587,7 @@ class ServiceDiscovery:
       del self.record_browsers[(interface, protocol, hostname)]
 
       # We do not need the addresses of the host anymore.
-      ans = self.db.command(["DELETE FROM addresses "            +
-                             "WHERE hostname= %r    " % hostname +
-                             "AND   if_name = %r    " % if_name  +
-                             "AND   if_ip   ='%i';  " % if_ip])
+      ans = self.db.command([("DELETE FROM addresses WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (hostname, if_name, if_ip))])
       if (ans != 0):
         self.stop(error = "Database failed (MySQL error: %i)." % ans)
         return
@@ -655,17 +630,17 @@ class ServiceDiscovery:
     # If we are already browsing for the hostname, maybe we already have an
     # address. We therefore look in the database.
     if self.record_browsers.has_key((interface, protocol, host)):
-      ans = self.db.query("SELECT COUNT(*) FROM addresses " +
-                          "WHERE hostname = %r" % host      +
-                          "AND if_name    = %r" % if_name   + 
-                          "AND if_ip      ='%i';" % if_ip) 
-      if (ans == None or len(ans) == 0):
+      ans = self.db.query(("SELECT address, ip FROM addresses WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (host, if_name, if_ip)))
+      if (ans == None):
         self.stop(error = "Database failed 3.")
         return
 
-      if (ans[0]['COUNT(*)'] >= 1):
+      if (len(ans) > 0):
         # We already have an address for the host.
         resolved = 1
+        addresses = []
+        for elem in ans:
+          addresses.append((int(elem['ip']), str(elem['address'])))
 
         # We check if the service has to be announced or not.
         if (self.toAnnounce(name, stype, if_name, if_ip, host, port)):
@@ -674,7 +649,7 @@ class ServiceDiscovery:
           dns_ans = self.dns.addService(name_dns,
                                         stype,
                                         host_dns,
-                                        [], # addresses are already announced.
+                                        addresses,
                                         port,
                                         txt)
           if (dns_ans == DNSWrapper.LABEL_NAME_ERROR):
@@ -693,16 +668,7 @@ class ServiceDiscovery:
             announced = 1
 
     # Insertion.
-    ans = self.db.command(["UPDATE services SET "            +
-                           "hostname = %r,  "    % host      +
-                           "port     ='%i', "    % port      +
-                           "TXT      ='%s', "    %Miscellaneous.escape(txt_sql)+
-                           "announced='%i', "    % announced +
-                           "resolved ='%i'  "    % resolved  +
-                           "WHERE name   = %r  " % name      + 
-                             "AND type   = %r  " % stype     +
-                             "AND if_name= %r  " % if_name   +
-                             "AND if_ip  ='%i';" % if_ip])
+    ans = self.db.command([("UPDATE services SET hostname = %s, port = %s, TXT = '"+Miscellaneous.escape(txt_sql)+"', announced= %s, resolved = %s WHERE name = %s AND type = %s AND if_name = %s AND if_ip = %s;", (host, port, announced, resolved, name, stype, if_name, if_ip))])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
@@ -786,15 +752,8 @@ class ServiceDiscovery:
     if_ip    = self.ip_version(protocol)
 
     # Insert the address and set the services of the hostname resolved.
-    ans = self.db.command(["INSERT INTO addresses " +
-                           "VALUES (%r, '%i', %r, '%i', %r);" %
-                                   (if_name, if_ip, name, serv_ip, address),
-
-                           "UPDATE services SET " +
-                                  "resolved='%i' " % 1       +  
-                           "WHERE hostname = %r "  % name    + 
-                             "AND if_name  = %r "  % if_name +
-                             "AND if_ip    ='%i';" % if_ip])
+    ans = self.db.command([("INSERT INTO addresses VALUES (%s, %s, %s, %s, %s);", (if_name, if_ip, name, serv_ip, address)),
+                           ("UPDATE services SET resolved=1 WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (name, if_name, if_ip))])
     if (ans == 1062):
       # Duplicate entry. Should not occur, but it's not a problem.
       self.logger.warning("Duplicate address %s for %s on %s. Ignored." %
@@ -805,10 +764,7 @@ class ServiceDiscovery:
       return
 
     # Selecting all the services of the hostname.
-    ans = self.db.query("SELECT * FROM services WHERE " +
-                        "hostname    = %r " % name      + 
-                        "AND if_name = %r " % if_name   +
-                        "AND if_ip   ='%i';" % if_ip)
+    ans = self.db.query(("SELECT * FROM services WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (name, if_name, if_ip)))
     if (ans == None):
       self.stop(error = "Database failed. 4")
       return
@@ -854,12 +810,7 @@ class ServiceDiscovery:
           announced = 1
 
         # Set the service announced. 
-        sql_ans = self.db.command(["UPDATE services SET " +
-                                   "announced='%i' "     % announced           +  
-                                   "WHERE name    = %r " % str(service['name'])+ 
-                                    "AND  type    = %r " % str(service['type'])+
-                                    "AND  if_name = %r " % str(service['if_name'])+
-                                    "AND  if_ip   ='%i';"% service['if_ip']])
+        sql_ans = self.db.command([("UPDATE services SET announced= %s WHERE name = %s AND type = %s AND if_name = %s AND if_ip = %s;", (announced, str(service['name']), str(service['type']), str(service['if_name']), service['if_ip']))])
         if (sql_ans != 0):
           self.stop(error = "Database failed (MySQL error: %i)." % sql_ans)
           return  
@@ -902,21 +853,13 @@ class ServiceDiscovery:
     if_name = self.interface_name(interface)
     if_ip   = self.ip_version(protocol)
 
-    ans = self.db.command(["DELETE FROM addresses " +
-                           "WHERE if_name  = %r  " % if_name +
-                           "  AND if_ip    ='%i' " % if_ip   +
-                           "  AND hostname = %r  " % name    +
-                           "  AND ip       ='%i' " % serv_ip +
-                           "  AND address  = %r; " % address])
+    ans = self.db.command([("DELETE FROM addresses WHERE if_name = %s AND if_ip = %s AND hostname = %s AND ip = %s AND address = %s;", (if_name, if_ip, name, serv_ip, address))])
     if (ans != 0):
       self.stop(error = "Database failed (MySQL error: %i)." % ans)
       return
 
     # Removing address from the DNS if announced.
-    ans = self.db.query("SELECT announced FROM services WHERE " +
-                        "hostname    = %r  " % name     + 
-                        "AND if_name = %r  " % if_name  +
-                        "AND if_ip   ='%i';" % if_ip)
+    ans = self.db.query(("SELECT announced FROM services WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (name, if_name, if_ip)))
     if (ans == None):
       self.stop(error = "Database failed. 5")
       return
@@ -941,10 +884,7 @@ class ServiceDiscovery:
                         self.interface_desc(interface, protocol))
 
     # Getting the number of remaining address for the hostname.
-    nb_addr_host_ans = self.db.query("SELECT COUNT(*) FROM addresses " +
-                                     "WHERE hostname = %r " % name     +
-                                       "AND if_name  = %r " % if_name  +
-                                       "AND if_ip    ='%i';" % if_ip)
+    nb_addr_host_ans = self.db.query(("SELECT COUNT(*) FROM addresses WHERE hostname = %s AND if_name  = %s AND if_ip = %s;", (name, if_name, if_ip)))
 
     if (nb_addr_host_ans == None or len(nb_addr_host_ans) == 0):
       self.stop(error = "Database failed. 6")
@@ -958,10 +898,7 @@ class ServiceDiscovery:
     # - Set all its services unresolved.
     if (nb_addr_host == 0):
       # Getting all the services of the host.
-      ans = self.db.query("SELECT * FROM services WHERE " +
-                          "hostname    = %r "  % name     + 
-                          "AND if_name = %r "  % if_name  +
-                          "AND if_ip   ='%i';" % if_ip)
+      ans = self.db.query(("SELECT * FROM services WHERE hostname = %s AND if_name = %s AND if_ip = %s;", (name, if_name, if_ip)))
       if (ans == None):
         self.stop(error = "Database failed. 7")
         return
@@ -969,21 +906,13 @@ class ServiceDiscovery:
       # Removing from the DNS all services that are announced.
       for service in ans:
         if (service['announced']):
-          response = self.db.command(["UPDATE services SET resolved ='0', "+
-                                                          "announced='0'  "+
-                                      "WHERE hostname = %r " % name        + 
-                                        "AND if_name  = %r " % if_name     +
-                                        "AND if_ip    ='%i'" % if_ip       +
-                                        "AND name     = %r " % str(service['name'])+
-                                        "AND type     = %r;" % str(service['type'])])
+          response = self.db.command([("UPDATE services SET resolved ='0', announced='0' WHERE hostname = %s AND if_name = %s AND if_ip = %s AND name = %s AND type = %s;", (name, if_name, if_ip, str(service['name']), str(service['type'])))])
           if (response != 0):
             self.stop(error = "Database failed (MySQL error: %i)." % response)
             return
           
           # Looking if there are still services of this type.
-          nb_type_ans = self.db.query("SELECT COUNT(*) FROM services "+
-                                      "WHERE type      = %r " % str(service['type']) +
-                                        "AND announced ='1';")
+          nb_type_ans = self.db.query(("SELECT COUNT(*) FROM services WHERE type = %s AND announced ='1';", (str(service['type']),)))
           if (nb_type_ans == None or len(nb_type_ans) == 0):
             self.stop(error = "Database failed. 8")
             return

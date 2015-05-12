@@ -51,8 +51,9 @@ class MySQLWrapper():
       returned. No escaping is performed.
 
     Args:
-      requests: An array of strings containing the individual SQL query
-                to perform.
+      requests: An array of tuples. The first element of the tuple contains the
+                string request and the second element a tuple of possible
+                parameters to this request.
 
     Returns:
       0 in case of success and the MySQL error code in case of failure.
@@ -73,7 +74,7 @@ class MySQLWrapper():
       cursor = cnx.cursor()
 
       for request in requests:
-        cursor.execute(request)
+        cursor.execute(request[0], request[1])
 
       cnx.commit()
     except mysql.connector.Error as err:
@@ -93,7 +94,8 @@ class MySQLWrapper():
       object are the column names of the MySQL result.
 
     Args:
-      query: The SQL query to issue to the server.
+      query: A tuple. The first element contains the query and the second a
+             tuple of possible parameters for this query.
     """
 
     config = {
@@ -110,7 +112,7 @@ class MySQLWrapper():
       cnx = mysql.connector.connect(**config)
       cursor = cnx.cursor(dictionary=True) # To return rows as dictionaries.
 
-      cursor.execute(query)
+      cursor.execute(query[0], query[1])
       
       # Putting the result rows in an array.
       result = []
