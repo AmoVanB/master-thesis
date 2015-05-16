@@ -7,8 +7,8 @@
   <!ATTLIST domain name CDATA #REQUIRED>
 <!ELEMENT rules (rule+)>
 <!ELEMENT rule (#PCDATA)>
-  <!ATTLIST rule src-address CDATA #REQUIRED>
-  <!ATTLIST rule src-mask    CDATA #REQUIRED>
-  <!ATTLIST rule router      CDATA #REQUIRED>
-  <!ATTLIST rule name        CDATA #REQUIRED>
-  <!ATTLIST rule type        CDATA #REQUIRED>
+  <!ATTLIST rule src-address       CDATA #REQUIRED>
+  <!ATTLIST rule src-prefix-length CDATA #REQUIRED>
+  <!ATTLIST rule router            CDATA #REQUIRED>
+  <!ATTLIST rule name              CDATA #REQUIRED>
+  <!ATTLIST rule type              CDATA #REQUIRED>

@@ -131,7 +131,7 @@ class PolicyManager:
                       else:
                         string = string + "-p !tcp " # Because DNS-SD RFC specifies that _udp is for any other protocol than _tcp
 
-                      string = string + "-s %s/%s " % (rule['src-address'], rule['src-mask'])
+                      string = string + "-s %s/%s " % (rule['src-address'], rule['src-prefix-length'])
     
                       string = string + "-i %s " % ifc
         

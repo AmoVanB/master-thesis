@@ -56,7 +56,7 @@
       foreach ($IDs as $id)
       {
         $src_add = htmlspecialchars($_POST["src-address-".$id]);
-        $src_msk = htmlspecialchars($_POST["src-mask-".$id]);
+        $src_msk = htmlspecialchars($_POST["src-prefix-length-".$id]);
         $name    = htmlspecialchars($_POST["name-".$id]);
         $type    = htmlspecialchars($_POST["type-".$id]);
         $router  = htmlspecialchars($_POST["router-".$id]);
@@ -69,7 +69,7 @@
         $attr->value = $src_add;
         $elem->appendChild($attr);
 
-        $attr = $dom->createAttribute('src-mask');
+        $attr = $dom->createAttribute('src-prefix-length');
         $attr->value = $src_msk;
         $elem->appendChild($attr);
 

@@ -13,7 +13,7 @@
     foreach ($IDs as $id)
     {
       $condition = $condition && isset($_POST["src-address-".$id]);
-      $condition = $condition && isset($_POST["src-mask-".$id]);
+      $condition = $condition && isset($_POST["src-prefix-length-".$id]);
       $condition = $condition && isset($_POST["name-".$id]);
       $condition = $condition && isset($_POST["type-".$id]);
       $condition = $condition && isset($_POST["router-".$id]);
