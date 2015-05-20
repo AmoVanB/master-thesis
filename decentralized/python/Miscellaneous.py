@@ -1,10 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 """
-/python/Miscellaneous.py
- 
-Module providing miscellaneous functions.
+/decentralized/python/Miscellaneous.py
 
 Part of master's thesis "Using Service Discovery to Apply Policies in Networks"
 at University of Liège 2014-2015.
@@ -13,6 +11,8 @@ Amaury Van Bemten.
 Entreprise: Cisco
 Contact entreprise: Eric Vyncke
 Advisor: Guy Leduc
+
+Module providing miscellaneous functions.
 """
 
 def bytes_to_hex_string(bytes):
@@ -26,6 +26,7 @@ def bytes_to_hex_string(bytes):
   """
 
   return ''.join('{:02x}'.format(x) for x in bytes)
+
 
 def escape(value):
   """Escapes spaces, parenthesises, new lines, CR and quotes from a string.

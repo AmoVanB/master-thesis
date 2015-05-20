@@ -1,3 +1,30 @@
+<?php
+// Functions for singular/plural handling.
+
+// has/have.
+function have($number)
+{
+  if ($number > 1)
+    return "have";
+  else
+    return "has";
+}
+
+// singular/plurar of nouns.
+function name($name, $number)
+{
+  if ($number > 1)
+  {
+    if (substr($name, -1) == "s")
+      return $name."es";
+    else
+      return $name."s";
+  }
+  else
+    return $name;
+}
+?>
+
 <script>
   // Statistics are initially hidden.
   window.onload = function() { $('#stats').hide(); };
@@ -52,12 +79,10 @@
                 $perc_v6_announced = round($v6_announced/$total_announced*100, 2);
               }    
 
-              
               echo '<li><strong>'.$row["if_name"].'</strong>';
-
               echo '<ul>';
-              echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) services discovered,</li>';
-              echo '<li>'.$total_announced.' ('.$perc_v4_announced.'% IPv4, '.$perc_v6_announced.'% IPv6) services announced.</li>';
+              echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) '.name("service", $total).' discovered,</li>';
+              echo '<li>'.$total_announced.' ('.$perc_v4_announced.'% IPv4, '.$perc_v6_announced.'% IPv6) '.name("service", $total_announced).' announced.</li>';
               echo '</ul>';
             }
             echo '</ul>';
@@ -80,16 +105,16 @@
             $nb_announced = $announced->fetchColumn();
 
             echo '<ul>';
-            echo '<li>'.$nb_services.' discovered services';
+            echo '<li>'.$nb_services.' discovered '.name("service", $nb_services);
             if ($nb_services == 0)
               echo '.</li>'; 
             else
             { 
               echo ' among which';
               echo '<ul>';
-              echo '<li>'.$nb_resolved.' ('.round($nb_resolved/$nb_services*100, 2).'%) have been resolved,'
+              echo '<li>'.$nb_resolved.' ('.round($nb_resolved/$nb_services*100, 2).'%) '.have($nb_resolved).' been resolved,'
                  , '</li>';
-              echo '<li>'.$nb_announced.' ('.round($nb_announced/$nb_services*100, 2).'%) have been announced.'
+              echo '<li>'.$nb_announced.' ('.round($nb_announced/$nb_services*100, 2).'%) '.have($nb_announced).' been announced.'
                  , '</li>';
               echo '</ul>';
               
@@ -99,9 +124,9 @@
             if ($nb_services != 0 && $nb_resolved != 0)
               echo '<li>'.round($nb_announced/$nb_resolved*100, 2).'% of the resolved services have been announced.</li>';
 
-            $sql_v4  = 'SELECT COUNT(*) FROM addresses WHERE ip = 4';
+            $sql_v4 = 'SELECT COUNT(*) FROM addresses WHERE ip = 4';
             $v4 = $db->query($sql_v4)->fetchColumn();
-            $sql_v6  = 'SELECT COUNT(*) FROM addresses WHERE ip = 6';
+            $sql_v6 = 'SELECT COUNT(*) FROM addresses WHERE ip = 6';
             $v6 = $db->query($sql_v6)->fetchColumn();
 
             $total = $v4 + $v6;
@@ -116,7 +141,7 @@
               $perc_v4 = round($v4/$total*100, 2);
               $perc_v6 = round($v6/$total*100, 2);
             }    
-            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered global addresses.</li>';
+            echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered global '.name("address", $total).'.</li>';
             echo '</ul>';
           ?>
 
@@ -172,10 +197,8 @@
                 $perc_v4_announced = round($v4_announced/$total_announced*100, 2);
                 $perc_v6_announced = round($v6_announced/$total_announced*100, 2);
               }    
-
-              
+    
               echo '<li><strong>'.$row["type"].'</strong>';
-
               echo '<ul>';
               echo '<li>'.$total.' ('.$perc_v4.'% IPv4, '.$perc_v6.'% IPv6) discovered,</li>';
               echo '<li>'.$total_announced.' ('.$perc_v4_announced.'% IPv4, '.$perc_v6_announced.'% IPv6) announced.</li>';
@@ -212,10 +235,10 @@
               echo '<li><strong>'.$row["hostname"].'</strong> ('.$row["if_name"].' - IPv'.$row["if_ip"].')';
 
               echo '<ul>';
-              echo '<li>'.$v4.' global IPv4 addresses,</li>';
-              echo '<li>'.$v6.' global IPv6 addresses,</li>';
-              echo '<li>'.$row["nb"].' discovered services,</li>';
-              echo '<li>'.$services_announced.' announced services.</li>';
+              echo '<li>'.$v4.' global IPv4 '.name("address", $v4).',</li>';
+              echo '<li>'.$v6.' global IPv6 '.name("address", $v6).',</li>';
+              echo '<li>'.$row["nb"].' discovered '.name("service", $row["nb"]).',</li>';
+              echo '<li>'.$services_announced.' announced '.name("service", $services_announced).'.</li>';
               echo '</ul>';
             }
             echo '</ul>';

@@ -1,6 +1,6 @@
 <?php
 
-  if (isset($_POST['loglevel']) && $_POST['rate']) && isset($_POST['domain']) && isset($_POST['save']) && ($_POST['save'] == "no" || isset($_POST['backup'])))
+  if (isset($_POST['loglevel']) && isset($_POST['rate']) && isset($_POST['domain']) && isset($_POST['save']) && ($_POST['save'] == "no" || isset($_POST['backup'])))
   {
     // If the form has been entirely submitted, we call the recipient script.
     include 'basic-configuration-result.php';

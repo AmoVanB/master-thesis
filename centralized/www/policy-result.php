@@ -91,7 +91,7 @@
     
     // Saving config file.
     if ($dom->save('/etc/policy-manager/config.xml') != FALSE)
-      echo '<p>Configuration file successfully updated with new announcement preferences.</p>';
+      echo '<p>Configuration file successfully updated with new access rules.</p>';
     else
       echo '<p>Error while saving new configuration file.</p>';
   }
@@ -101,4 +101,4 @@
   }
 ?>
 
-  <p><a href="index.php">Back to home</a>.</p>
+<p><a href="index.php">Back to home</a>.</p>

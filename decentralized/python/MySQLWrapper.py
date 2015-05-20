@@ -1,12 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 """
-/python/MySQLWrapper.py
+/decentralized/python/MySQLWrapper.py
 
-Part of master's thesis "Using Service Discovery to Apply Policies in Networks"
+Part of master thesis "Using Service Discovery to Apply Policies in Networks"
 at University of Liège 2014-2015.
-Amaury Van Bemten.
+by Amaury Van Bemten.
 
 Entreprise: Cisco
 Contact entreprise: Eric Vyncke
@@ -17,8 +17,7 @@ import mysql.connector
 
 class MySQLWrapper():
   """A wrapper around MySQL Python Connector library to allow to easily perform
-    MySQL queries.
-  """
+    MySQL queries."""
 
   def __init__(self, db_user, db_pwd, db_name, db_host, db_socket, db_port):
     """Constructor.
@@ -31,17 +30,11 @@ class MySQLWrapper():
       db_socket: Database socket.
       db_port:   Port on which the database listens.
     """
-    ## Database username.
     self.db_user   = db_user
-    ## Database password.
     self.db_pwd    = db_pwd
-    ## Database name.
     self.db_name   = db_name
-    ## Host hosting the database.
     self.db_host   = db_host
-    ## Database socket.
     self.db_socket = db_socket
-    ## Port on which the database listens.
     self.db_port   = db_port
 
 

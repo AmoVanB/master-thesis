@@ -82,9 +82,9 @@
     row += '    <option value="deny">Deny</option>';
     row += '    </select>';
     row += '</td>';
-    row += '<td><span class="text-info glyphicon glyphicon-arrow-up" onclick="moveRuleUp('+ maxID +')"></span></td>';
+    row += '<td><span class="text-info glyphicon glyphicon-arrow-up"   onclick="moveRuleUp('+ maxID +')"></span></td>';
     row += '<td><span class="text-info glyphicon glyphicon-arrow-down" onclick="moveRuleDown('+ maxID +')"></span></td>';
-    row += '<td><span class="text-danger glyphicon glyphicon-remove" onclick="removeRule('+ maxID +')"></span></td>';
+    row += '<td><span class="text-danger glyphicon glyphicon-remove"   onclick="removeRule('+ maxID +')"></span></td>';
     row += '</tr>';
 
     if ($('#rules-table tbody').length > 0) {
@@ -161,8 +161,8 @@
   }
 </script>
 
-<p>Each resolved service will go through the following list of rules to know whether it has to be announced or not on the public DNS. The first rule that is matched determines the action. If no rule is matched, the service will be denied.</p>
-<p><em>Matching</em> is based on regular expressions. For a service to match a rule, each of its fields must match the corresponding regular expression. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example <code>.*</code> matches any expression.</p>
+<p>Each resolved service will go through the following list of rules to know whether or not it has to be announced on the public DNS. The first rule that is matched determines the action. If no rule is matched, the service will be denied.</p>
+<p><em>Matching</em> is based on regular expressions. For a service to match a rule, each of its fields must match the corresponding regular expression. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example, <code>.*</code> matches any expression.</p>
 
 <form class="well table-responsive" action="index.php?page=announcement-preferences" method="POST">
   <fieldset>

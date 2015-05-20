@@ -1,30 +1,30 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 """
-/python/service-discovery-daemon.py
+/decentralized/python/service-discovery-daemon.py
  
-Part of master's thesis "Using Service Discovery to Apply Policies in Networks"
+Part of master thesis "Using Service Discovery to Apply Policies in Networks"
 at University of Liège 2014-2015.
-Amaury Van Bemten.
+by Amaury Van Bemten.
 
 Entreprise: Cisco
 Contact entreprise: Eric Vyncke
 Advisor: Guy Leduc
 """
 
-import sys             # for sys.exit and sys.arg
-import signal          # for signal handling
-import logging         # for logging
-import os              # for os.getuid and file system management
-import pwd, grp        # to get UID and GID of sd-daemon and sd
+import sys      # for sys.exit and sys.arg
+import signal   # for signal handling
+import logging  # for logging
+import os       # for os.getuid and file system management
+import pwd, grp # to get UID and GID of sd-daemon and sd
 
 if (os.getuid() != 0):
   print("Daemon command must be issued as root.")
   sys.exit(1)
 
 # Creating a logger to log events in service-discovery.log file.
-# Done here to be able to log the ImportError herebelow.
+# Done here in order to be able to log the ImportError herebelow.
 logger = logging.getLogger("service-discovery")
 logger.setLevel(logging.DEBUG)    
 formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(message)s",
@@ -37,56 +37,47 @@ logger.addHandler(handler)
 try:
   from ServiceDiscovery import ServiceDiscovery
 
-  from daemon import runner
+  from daemon import runner # daemon module
   import lockfile
-  from lxml import etree # for XML parsing
+  from lxml import etree    # for XML parsing
 except ImportError as e:
   logger.error("Sorry, to use this tool you need to install avahi, gobject, " +
-               "python-dbus, python-daemon, python-dns, netaddr, lxml and "   +
+               "python-dbus, python-daemon, dnspython, netaddr, lxml and "    +
                "Python/MySQL Connector.")
   logger.error("%s" % e)
   sys.exit(1)
 
 class ServiceDiscoveryDaemon():
-  """Daemon running the ServiceDiscovery (/thesis/ServiceDiscovery.py) class
-  to observe services on the local network and publish them on a given DNS
-  server.
-  """
+  """Daemon using the ServiceDiscovery class to observe services on the local
+  network and publish them on a given DNS server."""
 
   def __init__(self, logger, pidpath):
     # We redirect the ouputs to /dev/null so that nothing is printed.
     # All information should be forwarded to the .log file via the logger.
-    ## The standard input to use.
-    self.stdin_path = '/dev/null'
-    ## The standard output to use.
+    self.stdin_path  = '/dev/null'
     self.stdout_path = '/dev/stdout'
-    ## The standard error to use.
     self.stderr_path = '/dev/stderr'
-    ## The PID file to use.
-    self.pidfile_path =  pidpath
-    ## The timeout before considering PID file is locked.
-    self.pidfile_timeout = 5
-    ## The ServiceDiscovery instance used.
-    self.sd = None       
-    ## The logger used to log events.
-    self.logger = logger   
 
+    self.pidfile_path    = pidpath
+    self.pidfile_timeout = 5 # Timeout before considering PID file is locked.
+    self.logger = logger
+    self.sd = None           # ServiceDiscovery instance used.
 
   def run(self):
-    """Starts the daemon.
-    """
+    """Starts the daemon."""
+
     self.sd = ServiceDiscovery(logger)
     self.logger.info("Service discovery daemon startup.")
     self.sd.start()
 
+    # Once the start() method returns it means that the daemon is stopped.
     self.logger.info("Daemon stopped.")
 
   def stop(self):
-    """Stops the daemon.
-    """
+    """Stops the daemon."""
+
     self.logger.info("Service discovery daemon shutdown.")
     self.sd.stop()
-
 
 if __name__ == '__main__':
   # Those steps will be performed each time 'service-discovery-daemon.py' will
@@ -98,15 +89,14 @@ if __name__ == '__main__':
     logger.error("Bad usage. Usage: %s start|stop|restart" % sys.argv[0])
     sys.exit(2)
 
-  # Reading configuration file
+  # Reading configuration file.
   try:
     dtd = etree.DTD("/etc/service-discovery/config.dtd")
     xml = etree.parse("/etc/service-discovery/config.xml")
     if (not dtd.validate(xml)):
       raise etree.LxmlError("Configuration file is not a valid instance of " +
                             "DTD.")
-
-    level   = xml.find("./log").get("level")
+    level = xml.find("./log").get("level")
   except etree.LxmlError as e:
     logger.error("Error while parsing configuration file: %s" % e)
     logger.error("Daemon not started.")
@@ -120,9 +110,11 @@ if __name__ == '__main__':
   elif (level.lower() == 'warning'):
     logger.setLevel(logging.WARNING)    
   elif (level.lower() == 'error'):
-    logger.setLevel(logging.ERROR)    
+    logger.setLevel(logging.ERROR)  
+  else:
+    logger.setLevel(logging.DEBUG)  
 
-  # Initialization and configuration of daemon
+  # Initialization and configuration of daemon.
   if not os.path.exists('/var/run/service-discovery/'):
     os.makedirs('/var/run/service-discovery/')
 
@@ -135,7 +127,6 @@ if __name__ == '__main__':
 
   os.chown('/var/run/service-discovery/', uid, gid)
   os.chmod('/var/run/service-discovery/', 0755)
-
   app = ServiceDiscoveryDaemon(logger, "/var/run/service-discovery/pid")
   daemon_runner = runner.DaemonRunner(app)
 
@@ -146,7 +137,7 @@ if __name__ == '__main__':
   daemon_runner.daemon_context.uid = uid
   daemon_runner.daemon_context.gid = gid
   
-  # Every may read but only user may write files created by the process.
+  # Everyone may read but only user may write files created by the process.
   # This is mainly intended for the PID file.
   daemon_runner.daemon_context.umask = 022
 
@@ -177,10 +168,10 @@ if __name__ == '__main__':
     logger.error("Daemon seems to be already running. %s" % e)
     sys.exit(1)
   except lockfile.LockFailed as e:
-    logger.error("Problem occured locking PID file. %s" % e)
+    logger.error("Problem occured when locking PID file. %s" % e)
     sys.exit(1)
   except lockfile.UnlockError as e:
-    logger.error("Error while unlocking PID file lock. Was it locked? " +
+    logger.error("Error while unlocking PID file. Was it locked? " +
                  "Is it yours? %s" % e)
     sys.exit(1)
   except Exception as e:

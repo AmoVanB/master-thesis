@@ -26,11 +26,10 @@
   <legend>Configuration</legend>
 
     <label for="domain">Domain</label><br />
-    <input type="text"     id="domain"  name="domain"  value="<?php echo $domain; ?>"  size="30" required /><br />
+    <input type="text" id="domain" name="domain" value="<?php echo $domain; ?>" size="30" required /><br />
 
-    <label for="rate">Update Rate (min)</label><br />
-    <input type="number" id="rate"  name="rate" value="<?php echo $rate; ?>"  size="3" min="1" required /><br />
-<input type="number" name="quantity" min="1" max="5">
+    <label for="rate">Update Rate (sec)</label><br />
+    <input type="number" id="rate" name="rate" value="<?php echo $rate; ?>" size="3" min="1" required /><br />
 
     <label for="loglevel">Log Level</label><br /> 
     <select id="loglevel" name="loglevel">
@@ -39,7 +38,6 @@
       <option value="info"    <?php if ($loglevel == 'info')    echo 'selected'; ?>>Info</option>
       <option value="debug"   <?php if ($loglevel == 'debug')   echo 'selected'; ?>>Debug</option>
     </select><br />
-
   </fieldset>
 
   <fieldset>
@@ -56,7 +54,7 @@
     <br />
   </fieldset>
 
-  <input type="submit" value="Submit" class="btn btn-primary"  />
-  <input type="reset" value="Reset"   class="btn btn-default" />  
+  <input type="submit" value="Submit" class="btn btn-primary" />
+  <input type="reset"  value="Reset"  class="btn btn-default" />  
 
 </form>

@@ -1,12 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 
 """
-/python/DNSWrapper.py
+/decentralized/python/DNSWrapper.py
 
-Part of master's thesis "Using Service Discovery to Apply Policies in Networks"
+Part of master thesis "Using Service Discovery to Apply Policies in Networks"
 at University of Liège 2014-2015.
-Amaury Van Bemten.
+by Amaury Van Bemten.
 
 Entreprise: Cisco
 Contact entreprise: Eric Vyncke
@@ -19,9 +19,10 @@ import dns.query
 import dns.update
 import dns.tsigkeyring
 import dns.name
-import socket          # To catch socket errors.
+import socket
 import Miscellaneous
 
+# Timeout limit after which DNS request is considered failed.
 TIMEOUT = 5
 
 LABEL_NAME_ERROR  = 11
@@ -55,7 +56,7 @@ def sendUpdate(ipv6_address, ipv4_address, update):
           dns.exception.DNSException,
           socket.error, # may occur if the host does not support IPv[46] and we
                         # try to connect to IPv[46] address of the name server.
-          dns.exception.Timeout) as e: 
+          dns.exception.Timeout): 
     # Here: IPv6 was unsuccessful, let's try IPv4.
     try:
       if (ipv4_address == None):
@@ -64,7 +65,7 @@ def sendUpdate(ipv6_address, ipv4_address, update):
     except (dns.tsig.PeerBadKey,
             dns.tsig.PeerBadSignature,
             dns.exception.DNSException,
-            dns.exception.Timeout) as e: 
+            dns.exception.Timeout): 
       return NS_QUERYING_ERROR
     except (socket.error):
       return SOCKET_ERROR
@@ -73,9 +74,8 @@ def sendUpdate(ipv6_address, ipv4_address, update):
 
 
 class DNSWrapper:
-  """A wrapper around the python-dns library to allow to easily perform
-     DNS updates on a particular zone.
-  """
+  """A wrapper around the dnspython library to allow to easily perform
+     DNS updates on a particular zone."""
 
   def __init__(self, server, key_name, key_value, zone, algorithm, ttl, domain):
     """Constructor.
@@ -92,22 +92,16 @@ class DNSWrapper:
         domain:    The name of the label to add to zone to identify the domain
                    in which to publish. 
     """
-    ## Server name.
+
     self.server = server
-    ## TSIG key's name.
     self.key_name = key_name
-    ## TSIG key's value.
     self.key_value = key_value
-    ## Zone to update.
     self.zone = zone
-    ## TSIG algorithm used to sign.
     self.algorithm = algorithm
-    ## TTL.
     self.ttl = ttl
-    ## Subdomain in which to publish
     self.domain = domain
 
-    ## DNS Update (RFC2136) error codes based on their number.
+    # DNS Update (RFC2136) error codes based on their number.
     self.DNSUpdateErrorCodes = {1: 'FORMERR',
                                 2: 'SERVFAIL',
                                 3: 'NXDOMAIN',
@@ -119,7 +113,7 @@ class DNSWrapper:
                                 9: 'NOTAUTH', 
                                10: 'NOTZONE'}
 
-    ## DNS Update (RFC2136) error strings based on their number.
+    # DNS Update (RFC2136) error strings based on their number.
     # From RFC2136 - Section 2.2.
     self.DNSUpdateErrorStrings = {1: 'The name server was unable to interpret '+
                                      'the request due to a format error.',
@@ -146,7 +140,7 @@ class DNSWrapper:
                                      'Update Section is not within the '       +
                                      'zone denoted by the Zone Section.'}
 
-    ## Description of the error the class may return based on their integer
+    # Description of the error the class may return based on their integer
     # representation.
     self.errors = self.DNSUpdateErrorStrings
     self.errors[LABEL_NAME_ERROR]  = 'Label or name too long or empty.'
@@ -169,8 +163,8 @@ class DNSWrapper:
     """
 
     addresses = [None, None]
+    # IPv6
     try:
-      # First trying IPv6.
       answers_IPv6 = dns.resolver.query(name, 'AAAA')
 
       for rdata in answers_IPv6:
@@ -179,11 +173,11 @@ class DNSWrapper:
             dns.resolver.NoAnswer,
             dns.resolver.NoNameservers,
             dns.exception.Timeout,
-            dns.exception.DNSException) as e:
+            dns.exception.DNSException):
       addresses[0] = None
 
+    # IPv4
     try:
-      # Try IPv4.
       answers_IPv4 = dns.resolver.query(name, 'A')
       for rdata in answers_IPv4:
         addresses[1] = rdata.address
@@ -191,7 +185,7 @@ class DNSWrapper:
             dns.resolver.NoAnswer,
             dns.resolver.NoNameservers,
             dns.exception.Timeout,
-            dns.exception.DNSException) as e:
+            dns.exception.DNSException):
       addresses[1] = None
 
     return addresses
@@ -333,7 +327,7 @@ class DNSWrapper:
         elif (t[0] == 4):
           update.add(host + domain, self.ttl, 'A'   , t[1])
 
-    except (dns.name.LabelTooLong,dns.name.NameTooLong,dns.name.EmptyLabel) as e:
+    except (dns.name.LabelTooLong,dns.name.NameTooLong,dns.name.EmptyLabel):
       return LABEL_NAME_ERROR
       
     return sendUpdate(server_addresses[0], server_addresses[1], update)
@@ -448,9 +442,9 @@ class DNSWrapper:
     try:
       types_answer = dns.resolver.query('_services._dns-sd._udp' + domain +
                                         '.%s' % self.zone, 'PTR')
-    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN) as e:
+    except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
       return 0 # No services announced: no clearing.
-    except dns.exception.DNSException as e:
+    except dns.exception.DNSException:
       return NS_QUERYING_ERROR
 
     # 2. Deleting [1]
@@ -464,7 +458,7 @@ class DNSWrapper:
       try:
         instances_answer = dns.resolver.query('%s.%s' % 
                                              (stype + domain, self.zone), 'PTR')
-      except dns.exception.DNSException as e:
+      except dns.exception.DNSException:
         continue
 
       # 4. Deleting [2]
@@ -478,7 +472,7 @@ class DNSWrapper:
         try:
           host_answer = dns.resolver.query('%s.%s' % 
                                            (name + domain, self.zone), 'SRV')
-        except dns.exception.DNSException as e:
+        except dns.exception.DNSException:
           continue
     
         # 6. Deleting [3] and [4]

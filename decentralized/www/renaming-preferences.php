@@ -1,5 +1,4 @@
 <?php
-
   /* If the form as been entirely submitted, we call the recipient script.
      Otherwise, we show the form. */
   if (isset($_POST["name"]) && isset($_POST["alias"]) && isset($_POST["ipv4"]) && isset($_POST["ipv6"]) && isset($_POST["usedIDs"]) && isset($_POST['save']) && ($_POST['save'] == "no" || isset($_POST['backup'])))
@@ -28,6 +27,5 @@
   {
     include 'renaming-preferences-form.php';
   }
-
 ?>
 

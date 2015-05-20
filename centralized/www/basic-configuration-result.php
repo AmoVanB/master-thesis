@@ -31,7 +31,7 @@
     // Updating tags with new values.
     $log        = $dom->getElementsByTagName('log')->item(0);
     $domain_tag = $dom->getElementsByTagName('domain')->item(0);
-    $update     = $dom->getElementsByTagName('rate')->item(0);
+    $update     = $dom->getElementsByTagName('update')->item(0);
 
     if ($log == null || $domain == null || $update == null)
       throw new DOMException('Invalid configuration file.');
@@ -52,4 +52,4 @@
   }
 ?>
 
-  <p><a href="index.php">Back to home</a>.</p>
+<p><a href="index.php">Back to home</a>.</p>

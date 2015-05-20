@@ -13,12 +13,10 @@
     echo '<p>Note: '.$e->getMessage().'</p>';
   }
 
-  $routers_results = dns_get_record( 'b._dns-sd._udp.'.$domain, DNS_PTR);
+  // Getting all the routers involved in the system.
+  $routers_results = dns_get_record('b._dns-sd._udp.'.$domain, DNS_PTR);
   $routers = array();
-
-  if (sizeof($routers_results) == 0)
-      echo '<div class="panel-heading">No routers found.</div>';
-  else
+  if (!(sizeof($routers_results) == 0))
     foreach ($routers_results as $router_entry)
       array_push($routers, explode(".", $router_entry['target'])[0]);
 
@@ -81,26 +79,26 @@
   {
 
     var row = '<tr id="rule-' + ++maxID + '">';
-    row += '<td><input type="text" name="src-address-'+ maxID +'" value="0.0.0.0" required /\></td>';
-    row += '<td><input type="number" value="0" name="src-prefix-length-'+ maxID +'" min="0" max="128" required /\></td>';
-    row += '<td><input type="text" name="name-'+ maxID +'"    value=".*" required         /\></td>';
-    row += '<td><input type="text" name="type-'+ maxID +'"    value=".*" required         /\></td>';
-    row += '<td><input type="text" name="router-'+ maxID +'"    value="*" list="routers"        required /\></td>';
+    row += '<td><input type="text"   name="src-address-'+ maxID +'"       value="0.0.0.0"                   required /\></td>';
+    row += '<td><input type="number" name="src-prefix-length-'+ maxID +'" value="0"       min="0" max="128" required /\></td>';
+    row += '<td><input type="text"   name="name-'+ maxID +'"              value=".*"                        required /\></td>';
+    row += '<td><input type="text"   name="type-'+ maxID +'"              value=".*"                        required /\></td>';
+    row += '<td><input type="text"   name="router-'+ maxID +'"            value="*"       list="routers"    required /\></td>';
     row += '<datalist id="routers">';
     <?php
       foreach ($routers as $router)
         echo "row += '<option value=\"".$router."\">';\n";
     ?>
-    row += '<option value="*">';
+    row += '  <option value="*">';
     row += '</datalist>';
     row += '<td><select name="action-'+ maxID +'">';
     row += '    <option value="allow" selected>Allow</option>';
     row += '    <option value="deny">Deny</option>';
     row += '    </select>';
     row += '</td>';
-    row += '<td><span class="text-info glyphicon glyphicon-arrow-up" onclick="moveRuleUp('+ maxID +')"></span></td>';
+    row += '<td><span class="text-info glyphicon glyphicon-arrow-up"   onclick="moveRuleUp('+ maxID +')"></span></td>';
     row += '<td><span class="text-info glyphicon glyphicon-arrow-down" onclick="moveRuleDown('+ maxID +')"></span></td>';
-    row += '<td><span class="text-danger glyphicon glyphicon-remove" onclick="removeRule('+ maxID +')"></span></td>';
+    row += '<td><span class="text-danger glyphicon glyphicon-remove"   onclick="removeRule('+ maxID +')"></span></td>';
     row += '</tr>';
 
     if ($('#rules-table tbody').length > 0) {
@@ -112,7 +110,7 @@
     
     /* We update usedIDs and the #usedIDs-field. This is a hidden field which
        lists the elements of usedIDs so that the recipient script knows which
-       aliases have been defined. */
+       rules have been defined. */
     usedIDs[usedIDs.length] = maxID;
     $('#usedIDs-field').attr('value', usedIDs);
   }
@@ -181,11 +179,11 @@
 
 <p>The application will automatically distinguish IPv6 from IPv4 addresses and those can hence be entered freely.</p>
 
-<p>The <em>mask</em> field specifies the number of bit in the IP address that will be checked for matching. A mask of 0 means that any address will match, i.e. no filtering will be done based on source IP address.</p>
+<p>The <em>prefix length</em> field specifies the number of bits in the IP address that will be checked for matching. A prefix length of 0 means that any address will match, i.e. no filtering will be done based on source IP address.</p>
 
-<p><em>Matching</em> of the <em>name</em> and <em>type</em> fields is based on regular expressions. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example <code>.*</code> matches any expression.</p>
+<p><em>Matching</em> of the <em>name</em> and <em>type</em> fields is based on regular expressions. The regular expressions syntax is the one defined by the <code>re</code> Python package whose documentation is available <a href="https://docs.python.org/2/library/re.html">here</a>. For example, <code>.*</code> matches any expression.</p>
 
-<p>The <em>router</em> field allow to apply a rule only on a particular router's services. The field is free text so that the user can specify routers that are possibly not currently part of the system. However, the interface proposes the routers currently involved in the system as hints. The <code>*</code> character must be used to specify that no filtering based on the router is wanted.</p>
+<p>The <em>router</em> field allows to apply a rule only on a particular router's services. The field is free text so that the user can specify routers that are possibly not currently part of the system. However, the interface proposes the routers currently involved in the system as hints. The <code>*</code> character can be used to specify that no filtering based on the router is wanted.</p>
 
 <form class="well table-responsive" action="index.php?page=policy" method="POST">
   <fieldset>
@@ -196,7 +194,7 @@
       <thead>
         <tr>
           <th>Source IP</th>
-          <th>Source Mask</th>
+          <th>Source Prefix Length</th>
           <th>Name</th>
           <th>Type</th>
           <th>Router</th>
@@ -224,11 +222,11 @@
           for ($i = 1; $i <= $numberOfRules; $i++)
           {
             echo '<tr id="rule-'.$i.'">';
-            echo '  <td><input type="text" name="src-address-'.$i.'" value="'.$rules->item($i-1)->getAttribute("src-address").'" required ></td>';
-            echo '  <td><input type="number" value="'.$rules->item($i-1)->getAttribute("src-prefix-length").'" name="src-prefix-length-'.$i.'" min="0" max="128" required></td>';
-            echo '  <td><input type="text" name="name-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("name").'"           required /></td>';
-            echo '  <td><input type="text" name="type-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("type").'"           required /></td>';
-            echo '  <td><input type="text" name="router-'.$i.'"    value="'.$rules->item($i-1)->getAttribute("router").'" list="routers"        required /></td>';
+            echo '  <td><input type="text"   name="src-address-'.$i.'"       value="'.$rules->item($i-1)->getAttribute("src-address").'"                         required ></td>';
+            echo '  <td><input type="number" name="src-prefix-length-'.$i.'" value="'.$rules->item($i-1)->getAttribute("src-prefix-length").'" min="0" max="128" required></td>';
+            echo '  <td><input type="text"   name="name-'.$i.'"              value="'.$rules->item($i-1)->getAttribute("name").'"                                required /></td>';
+            echo '  <td><input type="text"   name="type-'.$i.'"              value="'.$rules->item($i-1)->getAttribute("type").'"                                required /></td>';
+            echo '  <td><input type="text"   name="router-'.$i.'"            value="'.$rules->item($i-1)->getAttribute("router").'" list="routers"               required /></td>';
             echo '  <datalist id="routers">';
             foreach ($routers as $router)
               echo '   <option value="'.$router.'">';

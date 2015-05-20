@@ -34,13 +34,13 @@
 ?>
 
 <p>The router name must consist only of lower-case letters and numbers. <br />
-The public interfaces must be separated by commas if several have to be provided.</p>
+The public interfaces must be separated by commas if several ones have to be provided.</p>
 
 <form class="well" action="index.php?page=basic-configuration" method="POST">
   <fieldset>
   <legend>General</legend>
     <label for="pub_ifcs">Router Public Interface(s)</label><br />
-    <input type="text"     id="pub_ifcs"   name="pub_ifcs"   value="<?php echo $pub_ifcs; ?>"   size="30" required /><br />
+    <input type="text" id="pub_ifcs" name="pub_ifcs" value="<?php echo $pub_ifcs; ?>" size="30" required /><br />
   </fieldset>
 
   <fieldset>
@@ -62,7 +62,7 @@ The public interfaces must be separated by commas if several have to be provided
     <input type="text"     id="dbsocket" name="dbsocket" value="<?php echo $dbsocket; ?>" size="30"  required /><br />
     
     <label for="dbport">Port</label><br />
-    <input type="text"     id="dbport"   name="dbport"   value="<?php echo $dbport; ?>"   min="0" max="65535" required /><br />
+    <input type="text"     id="dbport"   name="dbport"   value="<?php echo $dbport; ?>" min="0" max="65535" required /><br />
 
   </fieldset>
 
@@ -95,7 +95,7 @@ The public interfaces must be separated by commas if several have to be provided
     <input type="password" id="keyval"  name="keyval"  value="<?php echo $keyval; ?>"  size="30" required /><br />
 
     <label for="ttl">TTL</label><br />
-    <input type="text"     id="ttl"     name="ttl"     value="<?php echo $ttl; ?>"     min="0" max="4294967295" required /><br />
+    <input type="text"     id="ttl"     name="ttl"     value="<?php echo $ttl; ?>" min="0" max="4294967295" required /><br />
 
     <label for="algo">Algorithm</label><br />
     <select id="algo" name="algo">
@@ -124,6 +124,6 @@ The public interfaces must be separated by commas if several have to be provided
   </fieldset>
 
   <input type="submit" value="Submit" class="btn btn-danger"  />
-  <input type="reset" value="Reset"   class="btn btn-default" />  
+  <input type="reset"  value="Reset"  class="btn btn-default" />  
 
 </form>

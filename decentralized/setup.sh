@@ -4,10 +4,11 @@ adduser  -r -g sd sd-gui
 
 mkdir /etc/service-discovery/
 
-cp  ./config/config.dtd           /etc/service-discovery/
-cp  ./config/config.xml           /etc/service-discovery/
-cp  ./config/avahi-daemon.conf    /etc/avahi/avahi-daemon.conf
-cp  ./config/system-local.conf    /etc/dbus-1/system-local.conf
+cp ./config/config.dtd        /etc/service-discovery/
+cp ./config/config.xml        /etc/service-discovery/
+cp ./config/avahi-daemon.conf /etc/avahi/avahi-daemon.conf
+cp ./config/system-local.conf /etc/dbus-1/system-local.conf
+
 touch /var/log/service-discovery.log
 
 chown sd-gui    /etc/service-discovery/
@@ -20,12 +21,14 @@ chgrp sd        /etc/service-discovery/config.dtd
 chgrp sd        /etc/service-discovery/config.xml
 chgrp sd        /var/log/service-discovery.log
 
-# Group can read, user write and others: nothing because holds passwords.
+# sd-gui (user) can modify the configuration file,
+# sd-gui and sd-daemon (group) can read the configuration file,
+# others cannot do anything because the file holds passwords.
 chmod 640 /etc/service-discovery/config.xml
-# DTD can't be edited by anybody.
+# DTD cannot be edited by anybody but can be read.
 chmod 444 /etc/service-discovery/config.dtd
-# Everybody may read the logs but only user/group may write.
-chmod 664 /var/log/service-discovery.log
+# Everybody may read the logs but only sd-daemon (user) may write in them.
+chmod 644 /var/log/service-discovery.log
 
 /opt/lampp/lampp start
 

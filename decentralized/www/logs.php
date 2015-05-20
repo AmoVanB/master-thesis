@@ -22,10 +22,10 @@
 
   // Labeling each message type.
   $file = str_replace('- CRITICAL -', '<span class="label label-danger">CRITICAL</span>', $file);
-  $file = str_replace('- ERROR -', '<span class="label label-danger">ERROR</span>', $file);
-  $file = str_replace('- WARNING -', '<span class="label label-warning">WARNING</span>', $file);
-  $file = str_replace('- INFO -', '<span class="label label-info">INFO</span>', $file);
-  $file = str_replace('- DEBUG -', '<span class="label label-default">DEBUG</span>', $file);
+  $file = str_replace('- ERROR -',    '<span class="label label-danger">ERROR</span>', $file);
+  $file = str_replace('- WARNING -',  '<span class="label label-warning">WARNING</span>', $file);
+  $file = str_replace('- INFO -',     '<span class="label label-info">INFO</span>', $file);
+  $file = str_replace('- DEBUG -',    '<span class="label label-default">DEBUG</span>', $file);
 
   echo '<div class="file-content">';
   echo '<p>';

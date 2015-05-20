@@ -10,7 +10,7 @@
   <!-- Image edited from 
   https://www.apple.com/support/assets/images/products/Bonjour/hero_bonjour.jpg
   -->
-  <link rel="icon" href="style/images/hero_bonjour.png">
+  <link rel="icon" href="style/images/bonjour.png">
   
   <!-- For mobiles: no initial zoom, use all space available. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -146,7 +146,7 @@
     <!-- Footer -->
     <div class="row">
       <footer class="col-xs-12">
-        <p>Web interface built as part of my master thesis <em>Using Service Discovery to Apply Policies in Networks</em> submitted in partial fulfillment of the requirements for the degree of Master in Computer Science and Engineering (University of Liège, 2014-2015). <em>Amaury Van Bemten</em>.</p>
+        <p>Web interface developed as part of my master thesis <em>Using Service Discovery to Apply Policies in Networks</em> submitted in partial fulfillment of the requirements for the degree of MSc in Computer Science and Engineering at the University of Liège (2014-2015). <em>Amaury Van Bemten</em>.</p>
       </footer>
     </div>
   </div>

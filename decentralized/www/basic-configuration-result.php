@@ -77,4 +77,4 @@
   }
 ?>
 
-  <p><a href="index.php">Back to home</a>.</p>
+<p><a href="index.php">Back to home</a>.</p>
