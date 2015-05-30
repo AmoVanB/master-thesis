@@ -35,7 +35,7 @@ chmod 644 /var/log/service-discovery.log
 echo "Creating MySQL user amo using root."
 /opt/lampp/bin/mysql -u root -p < sql/root_init.sql
 echo "Creating tables using amo."
-/opt/lampp/bin/mysql -u amo -p < sql/user_init.sql
+/opt/lampp/bin/mysql -u amo -p  < sql/user_init.sql
 
 # Restart Avahi to reload configuration.
 avahi-daemon --kill
