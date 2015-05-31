@@ -92,45 +92,31 @@ class PolicyManager:
             if rule['router'] == router or rule['router'] == "*":
               rules_routers_filtered.append(rule)
 
-          # Creating a list of the service types at the router.
-          types = []
-          for stype_fqdn in services[router_fqdn].keys():
-            # Getting only the service type.
-            stype = stype_fqdn.strip(".")[:-len(router_fqdn.strip("."))-1]
-            types.append(stype)
-
-          # Removing rules for service types not at router.
-          rules_stype_filtered = [] 
-          for rule in rules_routers_filtered:
-            # Looking if the rule has to be kept or not. It has to be if one
-            # service type matches its type field.
-            to_keep = False
-            for stype in types:
-              to_keep = to_keep or re.match(rule['type'], stype)
-
-            if to_keep:
-              rules_stype_filtered.append(rule)
-
           # For each rule.
           for rule in rules_stype_filtered:
-            # Computing the rules matching the service.
-            match_services = []
-            for service in services[router_fqdn][stype_fqdn]:
-              # Check if IP versions are the same.
-              ip_ok = False
-              try:
-                ip_version = netaddr.IPAddress(rule['src-address']).version
-              except netaddr.core.AddrFormatError:
-                self.logger.warning("%s is not a valid address. Rule " +
-                                    "ignored." % rule['src-address'])
-              for add in service['addresses']:
-                if ip_version == netaddr.IPAddress(add).version:
-                  ip_ok = True
-                  break
+            try:
+              ip_version = netaddr.IPAddress(rule['src-address']).version
+            except netaddr.core.AddrFormatError:
+              self.logger.warning("%s is not a valid address. Rule " +
+                                  "ignored." % rule['src-address'])
+              break
 
-              # Check if the regexp matches the name of the service.
-              if ip_ok and re.match(rule['name'], service['name']):
-                match_services.append(service)
+            # Computing the services matching the rule.
+            match_services = []
+            for stype in services[router_fqdn].keys():
+              for service in services[router_fqdn][stype]:
+                # Check if IP versions are the same.
+                ip_ok = False
+                for add in service['addresses']:
+                  if ip_version == netaddr.IPAddress(add).version:
+                    ip_ok = True
+                    break
+
+                # Check if the regular expressions match the name and type of
+                # the service.
+                if (ip_ok and re.match(rule['name'], service['name'])
+                          and re.match(rule['type'], service['type'])):
+                  match_services.append(service)
   
             # For each service matching the rule.
             for match_service in match_services:
