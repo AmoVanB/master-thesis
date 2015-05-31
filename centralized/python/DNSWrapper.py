@@ -42,16 +42,16 @@ class DNSWrapper:
   requests on a particular domain."""
 
   def __init__(self, domain):
-  """Constructor."""
+    """Constructor."""
 
     self.domain = domain
 
   def getSerial(self):
-  """Gets the serial field of the SOA of the domain.
+    """Gets the serial field of the SOA of the domain.
 
-  Returns:
-    The serial field of the SOA or 0 if query fails.
-  """
+    Returns:
+      The serial field of the SOA or 0 if query fails.
+    """
 
     try:
       answers = dns.resolver.query(self.domain, 'SOA')
@@ -68,17 +68,17 @@ class DNSWrapper:
     return soa
 
   def getServices(self):
-  """Gets the services announced in the domain and its subdomains.
+    """Gets the services announced in the domain and its subdomains.
 
-  Returns:
-    A dictionary A whose keys are the different subdomains found. Elements of 
-    A are dictionaries B whose keys are the different types found in the 
-    subdomain. Elements of B are arrays of dictionaries C representing the
-    services of the given type in the given subdomain. Those services are 
-    represented by the keys: name, port, host, addresses (array of addresses). 
+    Returns:
+      A dictionary A whose keys are the different subdomains found. Elements of 
+      A are dictionaries B whose keys are the different types found in the 
+      subdomain. Elements of B are arrays of dictionaries C representing the
+      services of the given type in the given subdomain. Those services are 
+      represented by the keys: name, port, host, addresses (array of addresses). 
 
-    None in case of failure.
-  """
+      None in case of failure.
+    """
     
     services = dict()
 
@@ -165,15 +165,15 @@ class DNSWrapper:
     return services
 
   def getPublicInterfaces(self, router):
-  """Gets the public interfaces announced by a router in the domain.
+    """Gets the public interfaces announced by a router in the domain.
 
-  Args:
-    router: name of the router.
+    Args:
+      router: name of the router.
 
-  Returns:
-    An array of the interfaces announced by the router or None in case of 
-    failure.
-  """
+    Returns:
+      An array of the interfaces announced by the router or None in case of 
+      failure.
+    """
 
     interfaces = []
     try:

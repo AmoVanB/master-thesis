@@ -93,82 +93,82 @@ class PolicyManager:
               rules_routers_filtered.append(rule)
 
           # For each type at the router.
+          rules_stype_filtered = []
           for stype_fqdn in services[router_fqdn].keys():
             # Getting only the service type.
             stype = stype_fqdn.strip(".")[:-len(router_fqdn.strip("."))-1]
 
-            # Removing rules not concerning the current service type.
-            rules_stype_filtered = []
+            # Keeping rules for the current service type.
             for rule in rules_routers_filtered:
               if re.match(rule['type'], stype):
                 rules_stype_filtered.append(rule)
 
-            # For each rule.
-            for rule in rules_stype_filtered:
-              # Computing the rules matching the service.
-              match_services = []
-              for service in services[router_fqdn][stype_fqdn]:
-                # Check if IP versions are the same.
-                ip_ok = False
-                try:
-                  ip_version = netaddr.IPAddress(rule['src-address']).version
-                except netaddr.core.AddrFormatError:
-                  self.logger.warning("%s is not a valid address. Rule " +
-                                      "ignored." % rule['src-address'])
-                for add in service['addresses']:
-                  if ip_version == netaddr.IPAddress(add).version:
-                    ip_ok = True
-                    break
+          # For each rule.
+          for rule in rules_stype_filtered:
+            # Computing the rules matching the service.
+            match_services = []
+            for service in services[router_fqdn][stype_fqdn]:
+              # Check if IP versions are the same.
+              ip_ok = False
+              try:
+                ip_version = netaddr.IPAddress(rule['src-address']).version
+              except netaddr.core.AddrFormatError:
+                self.logger.warning("%s is not a valid address. Rule " +
+                                    "ignored." % rule['src-address'])
+              for add in service['addresses']:
+                if ip_version == netaddr.IPAddress(add).version:
+                  ip_ok = True
+                  break
+
+              # Check if the regexp matches the name of the service.
+              if ip_ok and re.match(rule['name'], service['name']):
+                match_services.append(service)
   
-                # Check if the regexp matches the name of the service.
-                if ip_ok and re.match(rule['name'], service['name']):
-                  match_services.append(service)
-    
-              # For each service matching the rule.
-              for match_service in match_services:
-                # For each interface.
-                for ifc in input_ifcs:
-                  # For each address.
-                  for address in match_service['addresses']:
+            # For each service matching the rule.
+            for match_service in match_services:
+              # For each interface.
+              for ifc in input_ifcs:
+                # For each address.
+                for address in match_service['addresses']:
 
-                    # Creation of the rule (only if IP addresses match).
-                    if ip_version == netaddr.IPAddress(address).version:
+                  # Creation of the rule (only if IP addresses match).
+                  if ip_version == netaddr.IPAddress(address).version:
 
-                      # Choosing between iptables and ip6tables.
-                      string = ""
-                      if (ip_version == 4):
-                        string = string + "iptables -t filter -A FORWARD "
-                      else:
-                        string = string + "ip6tables -t filter -A FORWARD "
+                    # Choosing between iptables and ip6tables.
+                    string = ""
+                    if (ip_version == 4):
+                      string += "iptables -t filter -A FORWARD "
+                    else:
+                      string += "ip6tables -t filter -A FORWARD "
+
+                    # Choosing between tcp and !tcp. Indeed, RFC6763 specifies
+                    # that _udp is for any other protocol than TCP. It does 
+                    # not mean UDP.
+                    if (stype.split(".")[-1][1:]) == 'tcp':
+                      string += "-p tcp "
+                    else:
+                      string += "-p !tcp "
+
+                    # Specifying source address and prefix from the rule.
+                    string += "-s %s/%s " % (rule['src-address'],
+                                             rule['src-prefix-length'])
   
-                      # Choosing between tcp and !tcp. Indeed, RFC6763 specifies
-                      # that _udp is for any other protocol than TCP. It does 
-                      # not mean UDP.
-                      if (stype.split(".")[-1][1:]) == 'tcp':
-                        string = string + "-p tcp "
-                      else:
-                        string = string + "-p !tcp "
-
-                      # Specifying source address and prefix from the rule.
-                      string = string + "-s %s/%s " %
-                               (rule['src-address'], rule['src-prefix-length'])
-    
-                      # Interface.
-                      string = string + "-i %s " % ifc
-        
-                      # Destination is the address of the service.
-                      string = string + "-d %s " % address
-    
-                      # Port is the port on which the service is running.
-                      string = string + "--dport %i " % match_service['port']
+                    # Interface.
+                    string += "-i %s " % ifc
+      
+                    # Destination is the address of the service.
+                    string += "-d %s " % address
   
-                      # ACCEPT or DROP based on the rule.
-                      if (rule['action'] == 'allow'):
-                        string = string + "-j ACCEPT"
-                      else:
-                        string = string + "-j DROP"
+                    # Port is the port on which the service is running.
+                    string += "--dport %i " % match_service['port']
 
-                      iptables_file.write(string + "\n")
+                    # ACCEPT or DROP based on the rule.
+                    if (rule['action'] == 'allow'):
+                      string += "-j ACCEPT"
+                    else:
+                      string += "-j DROP"
+
+                    iptables_file.write(string + "\n")
 
           # Deny by default
           iptables_file.write("iptables  -t filter -P FORWARD DROP\n")
