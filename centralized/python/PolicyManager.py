@@ -93,7 +93,7 @@ class PolicyManager:
               rules_routers_filtered.append(rule)
 
           # For each rule.
-          for rule in rules_stype_filtered:
+          for rule in rules_routers_filtered:
             try:
               ip_version = netaddr.IPAddress(rule['src-address']).version
             except netaddr.core.AddrFormatError:
@@ -103,7 +103,10 @@ class PolicyManager:
 
             # Computing the services matching the rule.
             match_services = []
-            for stype in services[router_fqdn].keys():
+            for stype_fqdn in services[router_fqdn].keys():
+              # Keeping only service name.
+              stype = stype_fqdn.strip(".")[:-len(router_fqdn.strip("."))-1]
+
               for service in services[router_fqdn][stype]:
                 # Check if IP versions are the same.
                 ip_ok = False
@@ -115,7 +118,7 @@ class PolicyManager:
                 # Check if the regular expressions match the name and type of
                 # the service.
                 if (ip_ok and re.match(rule['name'], service['name'])
-                          and re.match(rule['type'], service['type'])):
+                          and re.match(rule['type'], stype):
                   match_services.append(service)
   
             # For each service matching the rule.
