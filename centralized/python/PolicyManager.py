@@ -92,16 +92,24 @@ class PolicyManager:
             if rule['router'] == router or rule['router'] == "*":
               rules_routers_filtered.append(rule)
 
-          # For each type at the router.
-          rules_stype_filtered = []
+          # Creating a list of the service types at the router.
+          types = []
           for stype_fqdn in services[router_fqdn].keys():
             # Getting only the service type.
             stype = stype_fqdn.strip(".")[:-len(router_fqdn.strip("."))-1]
+            types.append(stype)
 
-            # Keeping rules for the current service type.
-            for rule in rules_routers_filtered:
-              if re.match(rule['type'], stype):
-                rules_stype_filtered.append(rule)
+          # Removing rules for service types not at router.
+          rules_stype_filtered = [] 
+          for rule in rules_routers_filtered:
+            # Looking if the rule has to be kept or not. It has to be if one
+            # service type matches its type field.
+            to_keep = False
+            for stype in types:
+              to_keep = to_keep or re.match(rule['type'], stype)
+
+            if to_keep:
+              rules_stype_filtered.append(rule)
 
           # For each rule.
           for rule in rules_stype_filtered:
