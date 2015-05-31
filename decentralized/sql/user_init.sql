@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS addresses
   if_ip    TINYINT      NOT NULL,
   hostname VARCHAR(255) NOT NULL,
   ip       TINYINT      NOT NULL,
-  address  VARCHAR(39)  NOT NULL,
+  address  VARCHAR(39)  NOT NULL, /* longest addresses (IPv6) are 39 characters
+                                     long (including colons) when represented
+                                     in their longest usual format. */
   PRIMARY KEY (if_name, if_ip, hostname, ip, address)
 )ENGINE=InnoDB;
