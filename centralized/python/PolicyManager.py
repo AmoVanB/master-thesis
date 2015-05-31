@@ -86,6 +86,9 @@ class PolicyManager:
           iptables_file = open('/etc/policy-manager/iptables_' + router + '.sh',
                                'w')
 
+          # Storing written lines to avoid writing duplicates.
+          iptables_rules = []
+
           # Removing rules not concerning the current router.
           rules_routers_filtered = []
           for rule in rules:
@@ -107,7 +110,7 @@ class PolicyManager:
               # Keeping only service name.
               stype = stype_fqdn.strip(".")[:-len(router_fqdn.strip("."))-1]
 
-              for service in services[router_fqdn][stype]:
+              for service in services[router_fqdn][stype_fqdn]:
                 # Check if IP versions are the same.
                 ip_ok = False
                 for add in service['addresses']:
@@ -118,7 +121,7 @@ class PolicyManager:
                 # Check if the regular expressions match the name and type of
                 # the service.
                 if (ip_ok and re.match(rule['name'], service['name'])
-                          and re.match(rule['type'], stype):
+                          and re.match(rule['type'], stype)):
                   match_services.append(service)
   
             # For each service matching the rule.
@@ -165,7 +168,9 @@ class PolicyManager:
                     else:
                       string += "-j DROP"
 
-                    iptables_file.write(string + "\n")
+                    if not string in iptables_rules: 
+                      iptables_rules.append(string)
+                      iptables_file.write(string + "\n")
 
           # Deny by default
           iptables_file.write("iptables  -t filter -P FORWARD DROP\n")
@@ -178,6 +183,9 @@ class PolicyManager:
         if services and rules:
           dns_last_change = dns_current_serial
           config_last_change = config_current_change  
+
+      else:
+        self.logger.debug("No change detected.")
 
       time.sleep(int(self.rate)) # every x seconds.
 

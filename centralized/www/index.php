@@ -34,13 +34,6 @@
           {
             echo '<p>Note: policy manager daemon is not running.</p>';
           }
-          else
-          {
-            // Advertise user if config file has been changed.
-            if (file_exists("/etc/policy-manager/config.xml")) // Should always be true.
-              if (filemtime("/var/run/policy-manager/pid") < filemtime("/etc/policy-manager/config.xml"))
-                echo '<p>Note: configuration file has been changed since daemon startup.</p>';
-          }
         ?>
       </header>
     </div>
