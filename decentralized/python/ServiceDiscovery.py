@@ -198,7 +198,7 @@ class ServiceDiscovery:
     r_ip = xml.findall("./ip")
     for r_ip_elem in r_ip:
       v     = r_ip_elem.get("version")
-      alias = r_ip_elem.get("alias")
+      alias = r_ip_elem.get("alias").encode('utf-8') # same reason as for alias
 
       # Storing alias only for v4 and v6. If several aliases are given for a 
       # single version, the last one will override the others.
@@ -214,7 +214,7 @@ class ServiceDiscovery:
     r_ifc = xml.findall("./interface")
     for r_ifc_elem in r_ifc:
       ifc   = r_ifc_elem.get("name")
-      alias = r_ifc_elem.get("alias")
+      alias = r_ifc_elem.get("alias").encode('utf-8') # same reason as for alias
       self.ifc_aliases[ifc] = alias
 
     # Dictionary of the DBus Interfaces to service browsers.
