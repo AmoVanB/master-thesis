@@ -91,7 +91,10 @@ class ServiceDiscovery:
 
     # Getting name, alias and public interfaces.
     config = xml.getroot()
-    self.alias      = config.get("alias")
+    self.alias      = config.get("alias").encode('utf-8')
+                      # get() will return a unicode string, which we encode
+                      # into a Python using UTF-8 because the alias may contain
+                      # any UTF-8 character.
     self.name       = config.get("name")
     self.public_ifc = config.get("public-interfaces")
 
