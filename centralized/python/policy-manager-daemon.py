@@ -54,8 +54,8 @@ class PolicyManagerDaemon():
     # We redirect the ouputs to /dev/null so that nothing is printed.
     # All information should be forwarded to the .log file via the logger.
     self.stdin_path  = '/dev/null'
-    self.stdout_path = '/dev/stdout'
-    self.stderr_path = '/dev/stderr'
+    self.stdout_path = '/dev/null'
+    self.stderr_path = '/dev/null'
 
     self.logger = logger 
     self.domain = domain  
