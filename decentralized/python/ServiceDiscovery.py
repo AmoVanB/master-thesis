@@ -268,7 +268,9 @@ class ServiceDiscovery:
 
     # Announce the router to the global application.
     self.dns.addRecord(self.name, "TXT", "public=%s" % self.public_ifc, subdomain = False)
-    self.dns.addRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
+    self.dns.addRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.addRecord("lb._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.addRecord("db._dns-sd._udp", "PTR", self.name, subdomain = False)
 
     # Start browsing.
     self.browse()
@@ -304,7 +306,9 @@ class ServiceDiscovery:
     # Clear DNS.
     ans = self.dns.clearDNSServices()
     self.dns.removeRecord(self.name, "TXT", subdomain = False)
-    self.dns.removeRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False) 
+    self.dns.removeRecord("b._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.removeRecord("db._dns-sd._udp", "PTR", self.name, subdomain = False)
+    self.dns.removeRecord("lb._dns-sd._udp", "PTR", self.name, subdomain = False)
 
     if (ans != 0):
       self.logger.error("DNS zone not cleared properly: %s",
